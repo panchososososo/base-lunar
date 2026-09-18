@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es-CL" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d0d">
+<title>Base Lunar</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icono-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Base Lunar">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<header class="barra-sup">
+  <div class="marca">
+    <svg class="luna" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 14.6A8.5 8.5 0 0 1 9.4 3.7a8.5 8.5 0 1 0 10.9 10.9Z"/></svg>
+    <div>
+      <h1>Base Lunar</h1>
+      <p class="sub" id="sub-estado">cargando…</p>
+    </div>
+  </div>
+  <button class="icono-btn" id="btn-ajustes" aria-label="Ajustes">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+  </button>
+</header>
+
+<!-- ============ LOGIN ============ -->
+<section id="pantalla-login" class="pantalla activa centrado">
+  <div class="tarjeta login">
+    <svg class="luna grande" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 14.6A8.5 8.5 0 0 1 9.4 3.7a8.5 8.5 0 1 0 10.9 10.9Z"/></svg>
+    <h2>Base Lunar</h2>
+    <p class="ayuda">Los gastos de la casa, para los dos.</p>
+    <form id="form-login">
+      <label>Correo<input type="email" id="login-email" autocomplete="username" required></label>
+      <label>Clave<input type="password" id="login-clave" autocomplete="current-password" required></label>
+      <button class="primario" type="submit">Entrar</button>
+    </form>
+    <p class="error" id="login-error" hidden></p>
+    <p class="ayuda mini" id="login-sin-config" hidden>
+      Falta configurar Supabase en <code>config.js</code>. Mientras tanto la app
+      funciona guardando todo en este teléfono.
+    </p>
+    <button class="enlace" id="btn-modo-local">Usar sin cuenta (solo este dispositivo)</button>
+  </div>
+</section>
+
+<!-- ============ RESUMEN ============ -->
+<section id="pantalla-resumen" class="pantalla">
+  <div class="fila-filtros">
+    <button class="icono-btn chico" id="mes-antes" aria-label="Mes anterior">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <select id="selector-mes" aria-label="Mes"></select>
+    <button class="icono-btn chico" id="mes-despues" aria-label="Mes siguiente">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <div class="tarjeta saldo">
+    <p class="etiqueta">Saldo del mes</p>
+    <p class="cifra" id="cifra-saldo">—</p>
+    <p class="ayuda" id="saldo-detalle"></p>
+  </div>
+
+  <div class="duo">
+    <div class="tarjeta stat">
+      <p class="etiqueta">Ingresos</p>
+      <p class="cifra chica" id="cifra-ingresos">—</p>
+      <p class="ayuda" id="ppto-ingresos"></p>
+    </div>
+    <div class="tarjeta stat">
+      <p class="etiqueta">Egresos</p>
+      <p class="cifra chica" id="cifra-egresos">—</p>
+      <p class="ayuda" id="ppto-egresos"></p>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Egresos por categoría</h3>
+    <div id="gr-categorias" class="grafico"></div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Presupuesto del mes</h3>
+    <p class="ayuda mini">Barra = gastado. La marca vertical es el presupuesto.</p>
+    <div id="gr-presupuesto" class="grafico"></div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Ingresos v/s egresos por mes</h3>
+    <div id="gr-proyeccion" class="grafico"></div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Detalle por concepto</h3>
+    <div id="detalle-conceptos"></div>
+  </div>
+</section>
+
+<!-- ============ REGISTRAR ============ -->
+<section id="pantalla-registrar" class="pantalla">
+  <form id="form-mov" class="tarjeta">
+    <h3 id="titulo-form">Nuevo movimiento</h3>
+
+    <div class="segmentado" role="group" aria-label="Tipo">
+      <button type="button" class="seg activo" data-tipo="Egreso">Egreso</button>
+      <button type="button" class="seg" data-tipo="Ingreso">Ingreso</button>
+    </div>
+
+    <label>Monto
+      <div class="monto-caja">
+        <span>$</span>
+        <input type="text" inputmode="numeric" id="f-monto" placeholder="0" required>
+      </div>
+    </label>
+
+    <label>Concepto
+      <input type="text" id="f-concepto" list="lista-conceptos" placeholder="Líder, Feria, Luz…" required>
+      <datalist id="lista-conceptos"></datalist>
+    </label>
+
+    <label>Categoría</label>
+    <div class="chips" id="chips-categoria"></div>
+
+    <div class="duo">
+      <label>Fecha<input type="date" id="f-fecha" required></label>
+      <label>Presupuesto <span class="opcional">(opcional)</span>
+        <input type="text" inputmode="numeric" id="f-ppto" placeholder="—">
+      </label>
+    </div>
+
+    <input type="hidden" id="f-id">
+    <div class="acciones">
+      <button class="primario" type="submit" id="btn-guardar">Guardar</button>
+      <button class="secundario" type="button" id="btn-cancelar" hidden>Cancelar</button>
+    </div>
+  </form>
+</section>
+
+<!-- ============ HISTORIAL ============ -->
+<section id="pantalla-historial" class="pantalla">
+  <div class="fila-filtros">
+    <select id="hist-mes" aria-label="Mes del historial"></select>
+    <input type="search" id="hist-buscar" placeholder="Buscar concepto…" aria-label="Buscar">
+  </div>
+  <div id="lista-historial"></div>
+</section>
+
+<!-- ============ LISTAS ============ -->
+<section id="pantalla-lista" class="pantalla">
+  <div class="segmentado" id="seg-lista" role="group" aria-label="Tipo de lista">
+    <button type="button" class="seg activo" data-lista="Falta">Falta comprar</button>
+    <button type="button" class="seg" data-lista="Deseo">Se nos antoja</button>
+  </div>
+
+  <div id="bloque-Falta">
+    <form class="tarjeta" id="form-falta">
+      <div class="fila-agregar">
+        <input type="text" id="i-nombre" placeholder="Fajitas, papas, pan…" required
+               autocomplete="off" enterkeyhint="done">
+        <button class="primario chico" type="submit" aria-label="Agregar">+</button>
+      </div>
+      <div class="chips" id="chips-lugar"></div>
+    </form>
+
+    <div class="chips filtros" id="filtros-lugar"></div>
+    <div id="items-falta"></div>
+  </div>
+
+  <div id="bloque-Deseo" hidden>
+    <form class="tarjeta" id="form-deseo">
+      <div class="fila-agregar">
+        <input type="text" id="d-nombre" placeholder="Air fryer, sábanas…" required
+               autocomplete="off" enterkeyhint="done">
+        <input type="text" id="d-precio" inputmode="numeric" placeholder="$ aprox">
+        <button class="primario chico" type="submit" aria-label="Agregar">+</button>
+      </div>
+    </form>
+    <div id="items-deseo"></div>
+  </div>
+</section>
+
+<!-- ============ PRESUPUESTOS ============ -->
+<section id="pantalla-presupuestos" class="pantalla">
+  <div class="tarjeta">
+    <h3>Presupuestos mensuales</h3>
+    <p class="ayuda mini">Las metas de la planilla. Se pueden editar.</p>
+    <div id="lista-ppto"></div>
+    <form id="form-ppto" class="fila-agregar">
+      <input type="text" id="p-nombre" placeholder="Clasificación" required>
+      <input type="text" inputmode="numeric" id="p-monto" placeholder="Monto" required>
+      <button class="primario chico" type="submit">Agregar</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ AJUSTES ============ -->
+<section id="pantalla-ajustes" class="pantalla">
+  <div class="tarjeta">
+    <h3>Cuenta</h3>
+    <p class="ayuda" id="ajustes-sesion"></p>
+    <button class="secundario" id="btn-salir">Cerrar sesión</button>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Exportar</h3>
+    <p class="ayuda mini">Mismas columnas que la hoja <em>Registros</em>: se pega tal cual.</p>
+    <div class="acciones">
+      <button class="secundario" id="btn-export-xlsx">Excel (.xlsx)</button>
+      <button class="secundario" id="btn-export-csv">CSV</button>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Histórico</h3>
+    <p class="ayuda mini">Carga las <span id="n-historico">72</span> filas que ya estaban en la planilla. Solo la primera vez.</p>
+    <button class="secundario" id="btn-importar">Importar histórico</button>
+    <p class="ayuda" id="import-estado"></p>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Apariencia</h3>
+    <div class="segmentado" id="seg-tema" role="group" aria-label="Tema">
+      <button type="button" class="seg" data-tema="dark">Oscuro</button>
+      <button type="button" class="seg" data-tema="light">Claro</button>
+      <button type="button" class="seg" data-tema="auto">Auto</button>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Sincronización</h3>
+    <p class="ayuda" id="estado-sync"></p>
+    <button class="secundario" id="btn-refrescar">Refrescar ahora</button>
+  </div>
+</section>
+
+<nav class="barra-inf" id="nav">
+  <button data-ir="resumen" class="activo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h4v8H3zM10 3h4v18h-4zM17 9h4v12h-4z"/></svg><span>Resumen</span>
+  </button>
+  <button data-ir="registrar">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Registrar</span>
+  </button>
+  <button data-ir="lista">
+    <span class="con-globo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+      <i class="globo" id="globo-lista" hidden></i>
+    </span><span>Lista</span>
+  </button>
+  <button data-ir="historial">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Historial</span>
+  </button>
+  <button data-ir="presupuestos">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M7 8h7a3 3 0 0 1 0 6H7"/></svg><span>Ppto</span>
+  </button>
+</nav>
+
+<div id="aviso" class="aviso" hidden></div>
+
+<script src="config.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
