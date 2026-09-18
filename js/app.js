@@ -68,7 +68,9 @@ async function entrarALaApp() {
 function mostrar(nombre) {
   $$('.pantalla').forEach(p => p.classList.toggle('activa', p.id === `pantalla-${nombre}`));
   $$('#nav button').forEach(b => b.classList.toggle('activo', b.dataset.ir === nombre));
-  $('#nav').hidden = nombre === 'login';
+  const enLogin = nombre === 'login';
+  $('#nav').hidden = enLogin;
+  $('#btn-ajustes').hidden = enLogin;   // sin sesión no hay nada que ajustar
   scrollTo({ top: 0 });
 }
 
@@ -171,10 +173,13 @@ function cablear() {
   });
 }
 
+// paso: -1 = mes anterior (más atrás en el tiempo), +1 = mes siguiente.
+// mesesDisponibles() viene del más nuevo al más viejo, así que retroceder
+// en el tiempo es AVANZAR en el índice: por eso va `i - paso`.
 function moverMes(paso) {
   const lista = mesesDisponibles();
   const i = lista.indexOf(estado.mes);
-  const j = Math.min(lista.length - 1, Math.max(0, i + paso));
+  const j = Math.min(lista.length - 1, Math.max(0, i - paso));
   estado.mes = lista[j];
   pintarResumen();
 }

@@ -1,5 +1,5 @@
 // ============ service worker: la app abre aunque no haya señal ============
-const VERSION = 'base-lunar-v3';
+const VERSION = 'base-lunar-v4';
 const SHELL = [
   './', './index.html', './config.js',
   './css/estilos.css',
@@ -30,13 +30,17 @@ self.addEventListener('fetch', ev => {
   // nunca cachear llamadas a Supabase ni a los CDN de módulos
   if (url.origin !== location.origin) return;
 
+  // Primero la red, con la caché de respaldo: así una versión nueva subida a
+  // GitHub se ve al toque, y sin señal la app igual abre con lo último guardado.
   ev.respondWith(
-    caches.match(ev.request).then(hit => {
-      const red = fetch(ev.request).then(res => {
-        if (res.ok) caches.open(VERSION).then(c => c.put(ev.request, res.clone()));
+    fetch(ev.request)
+      .then(res => {
+        if (res.ok) {
+          const copia = res.clone();
+          caches.open(VERSION).then(c => c.put(ev.request, copia));
+        }
         return res;
-      }).catch(() => hit);
-      return hit || red;
-    })
+      })
+      .catch(() => caches.match(ev.request).then(hit => hit || Response.error()))
   );
 });
