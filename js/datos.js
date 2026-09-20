@@ -1,9 +1,10 @@
 // ============ capa de datos: Supabase + caché local + cola offline ============
-import { uid } from './util.js';
+import { uid, slug } from './util.js';
 
 const K_MOV   = 'bl.movimientos';
 const K_PPTO  = 'bl.presupuestos';
 const K_LISTA = 'bl.lista';
+const K_FIJOS = 'bl.fijos';
 const K_COLA  = 'bl.cola';
 const K_LOCAL = 'bl.modoLocal';
 
@@ -32,6 +33,7 @@ export const datos = {
   movimientos: leer(K_MOV, []),
   presupuestos: leer(K_PPTO, PPTO_INICIAL),
   lista: leer(K_LISTA, []),
+  fijos: leer(K_FIJOS, []),
   cola: leer(K_COLA, []),
   alCambiar: () => {},
   alEstado: () => {},
@@ -79,10 +81,11 @@ export const datos = {
   async sincronizar() {
     if (!this.sb || !this.usuario) return;
     await this.vaciarCola();
-    const [mov, ppto, lista] = await Promise.all([
+    const [mov, ppto, lista, fijos] = await Promise.all([
       this.sb.from('movimientos').select('*').order('fecha', { ascending: false }),
       this.sb.from('presupuestos').select('*').order('clasificacion'),
       this.sb.from('lista').select('*').order('creado_en', { ascending: true }),
+      this.sb.from('fijos').select('*').order('dia'),
     ]);
     if (mov.error) throw mov.error;
     this.movimientos = mov.data.map(normalizar);
@@ -94,6 +97,10 @@ export const datos = {
     if (!lista.error) {
       this.lista = lista.data;
       guardar(K_LISTA, this.lista);
+    }
+    if (!fijos.error) {
+      this.fijos = fijos.data.map(f => ({ ...f, monto: f.monto == null ? null : Number(f.monto) }));
+      guardar(K_FIJOS, this.fijos);
     }
     this.alCambiar();
     this.alEstado();
@@ -108,18 +115,38 @@ export const datos = {
       .subscribe();
   },
 
+  // Sube lo que quedó pendiente. Si algo falla NO se descarta: se deja en la
+  // cola para el próximo intento (antes se perdía, porque supabase-js devuelve
+  // el error en vez de lanzarlo y el `catch` nunca se ejecutaba).
   async vaciarCola() {
-    if (!this.cola.length || !this.enLinea) return;
-    const pendientes = [...this.cola];
-    for (const t of pendientes) {
+    if (!this.cola.length || !this.enLinea) return { subidos: 0, pendientes: this.cola.length };
+    let subidos = 0;
+    for (const t of [...this.cola]) {
+      let error = null;
       try {
-        if (t.op === 'insert')      await this.sb.from(t.tabla).insert(t.fila);
-        else if (t.op === 'update') await this.sb.from(t.tabla).update(t.fila).eq('id', t.fila.id);
-        else if (t.op === 'delete') await this.sb.from(t.tabla).delete().eq('id', t.id);
+        if (t.op === 'insert') {
+          ({ error } = await this.sb.from(t.tabla).upsert(t.fila));
+        } else if (t.op === 'update') {
+          ({ error } = await this.sb.from(t.tabla).update(t.fila).eq('id', t.fila.id));
+        } else if (t.op === 'delete') {
+          ({ error } = await this.sb.from(t.tabla).delete().eq('id', t.id));
+        }
+      } catch (e) { error = e; }
+
+      if (error) {
+        t.intentos = (t.intentos || 0) + 1;
+        t.ultimoError = error.message || String(error);
+        // Un error de permisos o de datos no se arregla reintentando para siempre
+        if (t.intentos >= 5) this.cola = this.cola.filter(x => x !== t);
+        else break;                       // el resto espera: mantiene el orden
+      } else {
         this.cola = this.cola.filter(x => x !== t);
-      } catch { break; }
+        subidos++;
+      }
     }
     guardar(K_COLA, this.cola);
+    this.alEstado();
+    return { subidos, pendientes: this.cola.length };
   },
 
   encolar(t) {
@@ -168,11 +195,18 @@ export const datos = {
     }
   },
 
+  /** Alta en lote (histórico o texto pegado), sin repetir lo que ya está. */
   async importar(filas) {
+    // Primero traer lo que haya en el servidor: si el otro teléfono ya importó,
+    // acá se ve y no se duplica.
+    if (this.enLinea) { try { await this.sincronizar(); } catch {} }
+    // Se compara solo contra lo que YA está guardado. Dos filas idénticas
+    // dentro del mismo lote son legítimas: en septiembre hay dos ferias de
+    // $20.000 el mismo día, y son dos ferias distintas.
     const existentes = new Set(this.movimientos.map(clave));
     const nuevas = filas
-      .map(f => ({ ...f, id: uid() }))
-      .filter(f => !existentes.has(clave(f)));
+      .filter(f => !existentes.has(clave(f)))
+      .map(f => ({ ...f, id: uid(), creado_por: this.usuario?.email ?? null }));
     if (!nuevas.length) return 0;
     this.movimientos = [...nuevas, ...this.movimientos];
     guardar(K_MOV, this.movimientos);
@@ -187,13 +221,21 @@ export const datos = {
   },
 
   // ---------- presupuestos ----------
+  // Se identifican por `clasificacion`, no por el id local: así dos teléfonos
+  // que todavía no sincronizan no terminan creando dos "Feria".
   async guardarPpto(fila) {
-    const i = this.presupuestos.findIndex(p => p.id === fila.id);
+    const i = this.presupuestos.findIndex(
+      p => p.id === fila.id || slug(p.clasificacion) === slug(fila.clasificacion));
     if (i >= 0) this.presupuestos[i] = { ...this.presupuestos[i], ...fila };
     else this.presupuestos.push({ ...fila, id: fila.id || uid() });
     guardar(K_PPTO, this.presupuestos);
     this.alCambiar();
-    if (this.enLinea) await this.sb.from('presupuestos').upsert(fila);
+    if (this.enLinea) {
+      const { id, ...sinId } = fila;
+      const { error } = await this.sb.from('presupuestos')
+        .upsert(sinId, { onConflict: 'clasificacion' });
+      if (error) this.encolar({ op: 'insert', tabla: 'presupuestos', fila: sinId });
+    }
   },
 
   async borrarPpto(id) {
@@ -244,6 +286,15 @@ export const datos = {
     return fuera.length;
   },
 
+  /** Vuelve a poner un item borrado, con su id original (para "deshacer"). */
+  async restaurarItem(fila) {
+    this.lista = [...this.lista.filter(i => i.id !== fila.id), fila]
+      .sort((a, b) => String(a.creado_en).localeCompare(String(b.creado_en)));
+    guardar(K_LISTA, this.lista);
+    this.alCambiar();
+    await this.subirLista('insert', fila);
+  },
+
   async subirLista(op, fila) {
     if (!fila) return;
     if (this.enLinea) {
@@ -254,6 +305,36 @@ export const datos = {
       if (error) this.encolar({ op, tabla: 'lista', fila });
     } else if (this.sb && this.usuario) {
       this.encolar({ op, tabla: 'lista', fila });
+    }
+  },
+
+  // ---------- gastos fijos ----------
+  async guardarFijo(fila) {
+    const f = { ...fila, id: fila.id || uid() };
+    const i = this.fijos.findIndex(x => x.id === f.id);
+    if (i >= 0) this.fijos[i] = { ...this.fijos[i], ...f };
+    else this.fijos.push(f);
+    this.fijos.sort((a, b) => (a.dia || 1) - (b.dia || 1));
+    guardar(K_FIJOS, this.fijos);
+    this.alCambiar();
+    if (this.enLinea) {
+      const { error } = await this.sb.from('fijos').upsert(f);
+      if (error) this.encolar({ op: 'insert', tabla: 'fijos', fila: f });
+    } else if (this.sb && this.usuario) {
+      this.encolar({ op: 'insert', tabla: 'fijos', fila: f });
+    }
+    return f;
+  },
+
+  async borrarFijo(id) {
+    this.fijos = this.fijos.filter(f => f.id !== id);
+    guardar(K_FIJOS, this.fijos);
+    this.alCambiar();
+    if (this.enLinea) {
+      const { error } = await this.sb.from('fijos').delete().eq('id', id);
+      if (error) this.encolar({ op: 'delete', tabla: 'fijos', id });
+    } else if (this.sb && this.usuario) {
+      this.encolar({ op: 'delete', tabla: 'fijos', id });
     }
   },
 };

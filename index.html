@@ -63,6 +63,15 @@
     <p class="etiqueta">Saldo del mes</p>
     <p class="cifra" id="cifra-saldo">—</p>
     <p class="ayuda" id="saldo-detalle"></p>
+    <div class="arrastre" id="arrastre" hidden>
+      <span>Venía de antes <b id="arr-antes">—</b></span>
+      <span>Pozo acumulado <b id="arr-total">—</b></span>
+    </div>
+  </div>
+
+  <div class="tarjeta" id="tarjeta-fijos" hidden>
+    <h3>Fijos que faltan este mes</h3>
+    <div id="fijos-pendientes"></div>
   </div>
 
   <div class="duo">
@@ -102,6 +111,27 @@
 
 <!-- ============ REGISTRAR ============ -->
 <section id="pantalla-registrar" class="pantalla">
+  <div class="segmentado" id="seg-registro" role="group" aria-label="Modo de registro">
+    <button type="button" class="seg activo" data-modo="uno">Uno por uno</button>
+    <button type="button" class="seg" data-modo="varios">Pegar varios</button>
+  </div>
+
+  <div id="bloque-varios" hidden>
+    <div class="tarjeta">
+      <h3>Pegar varios de una</h3>
+      <p class="ayuda mini">Una cosa por línea, tal como las anotan.
+        Entiende <code>10051 líder</code>, <code>Lider 12860</code>,
+        <code>+15000 devolución</code> y <code>30 lucas tupper</code>.</p>
+      <textarea id="v-texto" rows="7" spellcheck="false"
+        placeholder="10051 líder&#10;20000 feria&#10;9240 agua&#10;+81755 devolución metlife"></textarea>
+      <label>Fecha para todos<input type="date" id="v-fecha"></label>
+      <div class="acciones">
+        <button class="primario" type="button" id="btn-leer">Revisar</button>
+      </div>
+    </div>
+    <div id="v-previo"></div>
+  </div>
+
   <form id="form-mov" class="tarjeta">
     <h3 id="titulo-form">Nuevo movimiento</h3>
 
@@ -146,6 +176,7 @@
     <select id="hist-mes" aria-label="Mes del historial"></select>
     <input type="search" id="hist-buscar" placeholder="Buscar concepto…" aria-label="Buscar">
   </div>
+  <p class="ayuda total-filtro" id="hist-total" hidden></p>
   <div id="lista-historial"></div>
 </section>
 
@@ -193,6 +224,19 @@
       <input type="text" id="p-nombre" placeholder="Clasificación" required>
       <input type="text" inputmode="numeric" id="p-monto" placeholder="Monto" required>
       <button class="primario chico" type="submit">Agregar</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Gastos fijos</h3>
+    <p class="ayuda mini">Los que se repiten todos los meses. La app avisa en el
+      Resumen cuando falta anotarlos, con el monto de referencia ya puesto.</p>
+    <div id="lista-fijos"></div>
+    <form id="form-fijo" class="fila-agregar">
+      <input type="text" id="fj-concepto" placeholder="Luz" required>
+      <input type="text" id="fj-monto" inputmode="numeric" placeholder="Monto">
+      <input type="number" id="fj-dia" min="1" max="31" placeholder="Día" required>
+      <button class="primario chico" type="submit" aria-label="Agregar">+</button>
     </form>
   </div>
 </section>

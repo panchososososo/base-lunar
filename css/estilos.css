@@ -277,6 +277,46 @@ tr:last-child td { border-bottom: 0; }
 .fila-agregar .primario.chico { flex: none; min-width: 46px; font-size: 19px; line-height: 1; }
 #form-falta .fila-agregar, #form-deseo .fila-agregar { margin-top: 0; }
 
+/* ---------- saldo arrastrado ---------- */
+.arrastre {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--grid);
+  font-size: 12.5px; color: var(--muted);
+}
+.arrastre b { display: block; color: var(--text-primary); font-size: 15px; font-variant-numeric: tabular-nums; }
+.arrastre b.negativo { color: var(--mal); }
+
+/* ---------- pegar varios ---------- */
+textarea {
+  width: 100%; margin-top: 5px; resize: vertical;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-primary); background: var(--surface-1);
+  border: 1px solid var(--borde); border-radius: 12px; padding: 12px;
+}
+textarea:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+code {
+  font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--surface-2); border-radius: 5px; padding: 1px 5px;
+}
+
+.previos { display: grid; gap: 10px; }
+.previo { border: 1px solid var(--borde); border-radius: 12px; padding: 10px; background: var(--surface-1); }
+.previo-fila { display: flex; gap: 7px; align-items: center; }
+.previo-fila + .previo-fila { margin-top: 7px; }
+.previo-fila input, .previo-fila select { padding: 9px 10px; font-size: 13.5px; }
+.previo .p-concepto { flex: 1 1 0; min-width: 0; }
+.previo .p-monto { flex: 0 0 96px; text-align: right; font-variant-numeric: tabular-nums; }
+.previo .p-tipo { flex: 0 0 104px; }
+.previo .p-cat { flex: 1 1 0; min-width: 0; }
+.previo .quitar { background: none; border: 0; color: var(--muted); padding: 6px; flex: none; }
+.previo .quitar svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+
+.total-filtro { margin: -4px 0 10px; font-variant-numeric: tabular-nums; }
+
+/* ---------- fijos pendientes ---------- */
+.item.fijo .cuerpo strong { font-size: 14px; }
+.item.fijo .secundario.chico { padding: 8px 14px; font-size: 13px; }
+
 /* ---------- listas (falta comprar / deseos) ---------- */
 .chips.filtros { margin: 0 0 12px; }
 .chips.filtros .chip { padding: 7px 12px; font-size: 12.5px; }
@@ -339,9 +379,16 @@ tr:last-child td { border-bottom: 0; }
 .aviso {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 40;
+  display: flex; align-items: center; gap: 14px;
   background: var(--text-primary); color: var(--plano);
   padding: 11px 16px; border-radius: 999px; font-size: 13px; font-weight: 500;
   box-shadow: var(--sombra); max-width: calc(100vw - 32px);
+}
+.aviso > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aviso-accion {
+  background: none; border: 0; padding: 2px 0; flex: none;
+  color: var(--plano); font-weight: 700; text-decoration: underline;
+  font-size: 13px;
 }
 
 @media (min-width: 640px) {

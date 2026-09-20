@@ -2,10 +2,13 @@
 import { datos, LUGARES } from './datos.js';
 import { barrasRankeadas, bullet, lineas } from './graficos.js';
 import { exportarXlsx, exportarCsv } from './excel.js';
+import { parsear, categoriaDe } from './parser.js';
 import {
-  CATEGORIAS, clp, esc, fechaCorta, hoyISO, mesHoy, mesKey, mesLargo,
+  CATEGORIAS, clp, diaDelMes, esc, fechaCorta, hoyISO, mesHoy, mesKey, mesLargo,
   mesOrden, aNumero, uid,
 } from './util.js';
+
+const TODOS = '__todos__';   // opción "todos los meses" del historial
 
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -18,6 +21,9 @@ const estado = {
   lista: 'Falta',
   lugarNuevo: LUGARES[0],
   filtroLugar: 'Todo',
+  modoRegistro: 'uno',
+  previo: [],
+  ignoradas: [],
 };
 
 const ICONO_TIC   = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
@@ -78,8 +84,8 @@ function cablear() {
   $$('#nav button').forEach(b => b.onclick = () => {
     mostrar(b.dataset.ir);
     if (b.dataset.ir === 'historial') { $('#hist-mes').value = estado.mes; pintarHistorial(); }
-    if (b.dataset.ir === 'presupuestos') pintarPresupuestos();
-    if (b.dataset.ir === 'registrar') prepararForm();
+    if (b.dataset.ir === 'presupuestos') { pintarPresupuestos(); pintarFijos(); }
+    if (b.dataset.ir === 'registrar') { prepararForm(); modoRegistro(estado.modoRegistro); }
     if (b.dataset.ir === 'lista') pintarLista();
   });
   $('#btn-ajustes').onclick = () => { mostrar('ajustes'); pintarAjustes(); };
@@ -115,6 +121,28 @@ function cablear() {
   });
   $('#form-mov').onsubmit = guardarMovimiento;
   $('#btn-cancelar').onclick = () => prepararForm();
+
+  // --- pegar varios ---
+  $$('#seg-registro .seg').forEach(b => b.onclick = () => modoRegistro(b.dataset.modo));
+  $('#btn-leer').onclick = leerPegado;
+
+  // --- gastos fijos ---
+  $('#form-fijo').onsubmit = async ev => {
+    ev.preventDefault();
+    const concepto = $('#fj-concepto').value.trim();
+    const dia = Number($('#fj-dia').value);
+    if (!concepto || !dia) return;
+    await datos.guardarFijo({
+      concepto,
+      monto: aNumero($('#fj-monto').value),
+      dia: Math.min(31, Math.max(1, dia)),
+      tipo: 'Egreso',
+      categoria: categoriaDe(concepto, 'Egreso'),
+    });
+    $('#fj-concepto').value = ''; $('#fj-monto').value = ''; $('#fj-dia').value = '';
+    pintarFijos();
+    pintarFijosPendientes();
+  };
 
   // --- historial ---
   $('#hist-mes').onchange = pintarHistorial;
@@ -190,7 +218,7 @@ function pintarTodo() {
   pintarResumen();
   pintarGlobo();
   if ($('#pantalla-historial').classList.contains('activa')) pintarHistorial();
-  if ($('#pantalla-presupuestos').classList.contains('activa')) pintarPresupuestos();
+  if ($('#pantalla-presupuestos').classList.contains('activa')) { pintarPresupuestos(); pintarFijos(); }
   if ($('#pantalla-lista').classList.contains('activa')) pintarLista();
 }
 
@@ -210,9 +238,10 @@ function pintarResumen() {
   const opciones = lista.map(m => `<option value="${m}">${esc(mesLargo(m))}</option>`).join('');
   const previoHist = $('#hist-mes').value;
   $('#selector-mes').innerHTML = opciones;
-  $('#hist-mes').innerHTML = opciones;
+  $('#hist-mes').innerHTML = `<option value="${TODOS}">Todos los meses</option>` + opciones;
   $('#selector-mes').value = estado.mes;
-  $('#hist-mes').value = lista.includes(previoHist) ? previoHist : estado.mes;
+  $('#hist-mes').value = (previoHist === TODOS || lista.includes(previoHist))
+    ? previoHist : estado.mes;
 
   const movs = delMes(estado.mes);
   const ing = movs.filter(m => m.tipo === 'Ingreso');
@@ -228,6 +257,20 @@ function pintarResumen() {
   $('#saldo-detalle').textContent = movs.length
     ? `${movs.length} movimiento${movs.length === 1 ? '' : 's'} en ${mesLargo(estado.mes)}`
     : `Sin movimientos en ${mesLargo(estado.mes)}`;
+
+  // lo que se arrastra de los meses anteriores
+  const antes = acumuladoHasta(estado.mes, { incluir: false });
+  const arr = $('#arrastre');
+  if (antes !== 0) {
+    arr.hidden = false;
+    $('#arr-antes').textContent = clp(antes);
+    $('#arr-antes').className = antes < 0 ? 'negativo' : '';
+    const total = antes + saldo;
+    $('#arr-total').textContent = clp(total);
+    $('#arr-total').className = total < 0 ? 'negativo' : '';
+  } else {
+    arr.hidden = true;
+  }
 
   $('#cifra-ingresos').textContent = clp(ti);
   $('#cifra-egresos').textContent  = clp(te);
@@ -270,7 +313,103 @@ function pintarResumen() {
   lineas($('#gr-proyeccion'), serie);
 
   pintarDetalle(movs);
+  pintarFijosPendientes();
   pintarConceptosSugeridos();
+}
+
+/**
+ * Pozo acumulado hasta un mes. Ignora las filas "Saldo mes anterior" que
+ * venían de la planilla: son justamente este cálculo hecho a mano, y contarlas
+ * sería sumar dos veces lo mismo.
+ */
+function acumuladoHasta(mes, { incluir = true } = {}) {
+  const tope = mesOrden(mes);
+  let total = 0;
+  for (const m of datos.movimientos) {
+    if (/saldo\s+mes\s+anterior/i.test(m.concepto)) continue;
+    const o = mesOrden(mesKey(m.fecha));
+    if (o > tope || (!incluir && o === tope)) continue;
+    total += m.tipo === 'Ingreso' ? m.monto : -m.monto;
+  }
+  return total;
+}
+
+/* ---------- gastos fijos ---------- */
+
+/** Los fijos que este mes todavía no tienen un movimiento con ese concepto. */
+function fijosPendientes(mes) {
+  const hechos = new Set(
+    datos.movimientos.filter(m => mesKey(m.fecha) === mes)
+      .map(m => m.concepto.trim().toLowerCase()));
+  return datos.fijos.filter(f => !hechos.has(f.concepto.trim().toLowerCase()));
+}
+
+function pintarFijosPendientes() {
+  const pend = fijosPendientes(estado.mes);
+  const card = $('#tarjeta-fijos');
+  card.hidden = !pend.length;
+  if (!pend.length) return;
+
+  $('#fijos-pendientes').innerHTML = pend.map(f => `
+    <div class="item fijo" data-id="${f.id}">
+      <div class="cuerpo">
+        <strong>${esc(f.concepto)}</strong>
+        <small>${esc(f.categoria)} · día ${f.dia}${f.monto ? ` · suele ser ${clp(f.monto)}` : ''}</small>
+      </div>
+      <button class="secundario chico" data-op="anotar">Anotar</button>
+    </div>`).join('');
+
+  $('#fijos-pendientes').querySelectorAll('.fijo').forEach(el => {
+    const f = datos.fijos.find(x => x.id === el.dataset.id);
+    el.querySelector('[data-op="anotar"]').onclick = () => {
+      prepararForm({
+        tipo: f.tipo || 'Egreso',
+        categoria: f.categoria,
+        concepto: f.concepto,
+        monto: f.monto || 0,
+        presupuesto: f.monto || null,
+        fecha: diaDelMes(estado.mes, f.dia),
+      });
+      $('#f-id').value = '';          // es uno nuevo, no una edición
+      estado.editando = null;
+      $('#f-monto').value = f.monto ? f.monto.toLocaleString('es-CL') : '';
+      $('#btn-cancelar').hidden = true;
+      $('#titulo-form').textContent = `Anotar ${f.concepto}`;
+      $('#btn-guardar').textContent = 'Guardar';
+      mostrar('registrar');
+      modoRegistro('uno');
+      $('#f-monto').focus();
+      $('#f-monto').select?.();
+    };
+  });
+}
+
+function pintarFijos() {
+  const cont = $('#lista-fijos');
+  if (!datos.fijos.length) {
+    cont.innerHTML = '<p class="vacio">Todavía no hay fijos. Agrega la luz, el agua, el celular…</p>';
+    return;
+  }
+  cont.innerHTML = datos.fijos.map(f => `
+    <div class="fila-ppto" data-id="${f.id}">
+      <span>${esc(f.concepto)}<br><small class="ayuda mini">${esc(f.categoria)} · día ${f.dia}</small></span>
+      <span class="num" style="flex:none;font-variant-numeric:tabular-nums">${f.monto ? clp(f.monto) : '—'}</span>
+      <button class="icono-btn chico" data-op="borrar" aria-label="Borrar">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>`).join('');
+
+  cont.querySelectorAll('.fila-ppto').forEach(el => {
+    el.querySelector('[data-op="borrar"]').onclick = async () => {
+      const f = datos.fijos.find(x => x.id === el.dataset.id);
+      await datos.borrarFijo(f.id);
+      pintarFijos();
+      aviso(`Quitado de los fijos: ${f.concepto}`, {
+        accion: 'Deshacer',
+        alPulsar: async () => { await datos.guardarFijo(f); pintarFijos(); },
+      });
+    };
+  });
 }
 
 function pintarDetalle(movs) {
@@ -300,11 +439,26 @@ function pintarDetalle(movs) {
 
 function pintarHistorial() {
   const mes = $('#hist-mes').value || estado.mes;
+  const todos = mes === TODOS;
   const q = $('#hist-buscar').value.trim().toLowerCase();
-  let movs = delMes(mes);
+  let movs = todos ? [...datos.movimientos] : delMes(mes);
   if (q) movs = movs.filter(m =>
     m.concepto.toLowerCase().includes(q) || m.categoria.toLowerCase().includes(q));
   movs.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  // total de lo que quedó a la vista: "¿cuánto llevamos en X?"
+  const tot = $('#hist-total');
+  if (q || todos) {
+    const ing = movs.filter(m => m.tipo === 'Ingreso').reduce((s, m) => s + m.monto, 0);
+    const egr = movs.filter(m => m.tipo === 'Egreso').reduce((s, m) => s + m.monto, 0);
+    const partes = [`${movs.length} movimiento${movs.length === 1 ? '' : 's'}`];
+    if (egr) partes.push(`egresos ${clp(egr)}`);
+    if (ing) partes.push(`ingresos ${clp(ing)}`);
+    tot.textContent = partes.join(' · ');
+    tot.hidden = false;
+  } else {
+    tot.hidden = true;
+  }
 
   const cont = $('#lista-historial');
   if (!movs.length) { cont.innerHTML = '<p class="vacio">Sin movimientos.</p>'; return; }
@@ -335,10 +489,17 @@ function pintarHistorial() {
     const m = datos.movimientos.find(x => x.id === el.dataset.id);
     el.querySelector('[data-op="editar"]').onclick = () => editar(m);
     el.querySelector('[data-op="borrar"]').onclick = async () => {
-      if (!confirm(`¿Borrar "${m.concepto}" por ${clp(m.monto)}?`)) return;
+      const copia = { ...m };
       await datos.borrar(m.id);
       pintarHistorial();
-      aviso('Movimiento borrado.');
+      aviso(`Borrado: ${copia.concepto}`, {
+        accion: 'Deshacer',
+        alPulsar: async () => {
+          await datos.agregar(copia);
+          pintarTodo();
+          aviso('Listo, volvió.');
+        },
+      });
     };
   });
 }
@@ -411,8 +572,13 @@ function conectarItems(cont, despues) {
       despues();
     };
     el.querySelector('[data-op="quitar"]').onclick = async () => {
+      const copia = { ...it };
       await datos.borrarItem(it.id);
       despues();
+      aviso(`Quitado: ${copia.nombre}`, {
+        accion: 'Deshacer',
+        alPulsar: async () => { await datos.restaurarItem(copia); despues(); },
+      });
     };
   });
 }
@@ -551,6 +717,120 @@ function prepararForm(mov) {
   pintarChips();
 }
 
+/* ---------- pegar varios ---------- */
+
+function modoRegistro(modo) {
+  estado.modoRegistro = modo;
+  $$('#seg-registro .seg').forEach(b => b.classList.toggle('activo', b.dataset.modo === modo));
+  $('#form-mov').hidden = modo !== 'uno';
+  $('#bloque-varios').hidden = modo !== 'varios';
+  if (modo === 'varios' && !$('#v-fecha').value) $('#v-fecha').value = hoyISO();
+}
+
+function leerPegado() {
+  const fecha = $('#v-fecha').value || hoyISO();
+  const { movimientos, ignoradas } = parsear($('#v-texto').value, fecha);
+  estado.previo = movimientos;
+  estado.ignoradas = ignoradas;
+  pintarPrevio();
+  if (!movimientos.length) aviso('No encontré montos en ese texto.');
+}
+
+function pintarPrevio() {
+  const cont = $('#v-previo');
+  if (!estado.previo.length) { cont.innerHTML = ''; return; }
+
+  const opciones = tipo => CATEGORIAS[tipo]
+    .map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  cont.innerHTML = `
+    <div class="tarjeta">
+      <h3>Esto entendí — revísalo antes de guardar</h3>
+      <div class="previos">
+        ${estado.previo.map((m, i) => `
+          <div class="previo" data-i="${i}">
+            <div class="previo-fila">
+              <input class="p-concepto" value="${esc(m.concepto)}" aria-label="Concepto">
+              <input class="p-monto" inputmode="numeric" aria-label="Monto"
+                     value="${m.monto.toLocaleString('es-CL')}">
+              <button type="button" class="quitar" data-op="quitar" aria-label="Descartar">
+                <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="previo-fila chica">
+              <select class="p-tipo" aria-label="Tipo">
+                <option value="Egreso"${m.tipo === 'Egreso' ? ' selected' : ''}>Egreso</option>
+                <option value="Ingreso"${m.tipo === 'Ingreso' ? ' selected' : ''}>Ingreso</option>
+              </select>
+              <select class="p-cat" aria-label="Categoría">${opciones(m.tipo)}</select>
+            </div>
+          </div>`).join('')}
+      </div>
+      ${estado.ignoradas.length ? `<p class="ayuda mini" style="margin-top:12px">
+        Sin monto, así que las dejé fuera: ${estado.ignoradas.map(esc).join(' · ')}</p>` : ''}
+      <div class="acciones">
+        <button class="primario" type="button" id="btn-guardar-varios">
+          Guardar ${estado.previo.length} movimiento${estado.previo.length === 1 ? '' : 's'}
+        </button>
+      </div>
+    </div>`;
+
+  cont.querySelectorAll('.previo').forEach(el => {
+    const i = Number(el.dataset.i);
+    const cat = el.querySelector('.p-cat');
+    cat.value = estado.previo[i].categoria;
+
+    el.querySelector('.p-concepto').oninput = ev => {
+      estado.previo[i].concepto = ev.target.value;
+    };
+    el.querySelector('.p-monto').oninput = ev => {
+      formatearMiles(ev.target);
+      estado.previo[i].monto = aNumero(ev.target.value) || 0;
+    };
+    el.querySelector('.p-tipo').onchange = ev => {
+      const t = ev.target.value;
+      estado.previo[i].tipo = t;
+      estado.previo[i].categoria = categoriaDe(estado.previo[i].concepto, t);
+      cat.innerHTML = opciones(t);
+      cat.value = estado.previo[i].categoria;
+    };
+    cat.onchange = ev => { estado.previo[i].categoria = ev.target.value; };
+    el.querySelector('[data-op="quitar"]').onclick = () => {
+      estado.previo.splice(i, 1);
+      pintarPrevio();
+    };
+  });
+
+  $('#btn-guardar-varios').onclick = guardarVarios;
+}
+
+async function guardarVarios() {
+  const filas = estado.previo
+    .filter(m => m.monto > 0 && m.concepto.trim())
+    .map(({ fecha, tipo, categoria, concepto, monto }) =>
+      ({ fecha, tipo, categoria, concepto: concepto.trim(), presupuesto: null, monto }));
+  if (!filas.length) { aviso('No hay nada que guardar.'); return; }
+
+  const btn = $('#btn-guardar-varios');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const n = await datos.importar(filas);
+    estado.previo = []; estado.ignoradas = [];
+    $('#v-texto').value = '';
+    pintarPrevio();
+    estado.mes = mesKey(filas[0].fecha);
+    pintarResumen();
+    mostrar('resumen');
+    aviso(n === filas.length
+      ? `${n} movimiento${n === 1 ? '' : 's'} guardado${n === 1 ? '' : 's'}.`
+      : `${n} guardado${n === 1 ? '' : 's'}; ${filas.length - n} ya estaban.`);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = `Guardar ${filas.length} movimientos`;
+    aviso('No se pudo guardar. Revisa la conexión.');
+  }
+}
+
 function pintarChips() {
   const cont = $('#chips-categoria');
   const cats = CATEGORIAS[estado.tipo];
@@ -629,10 +909,18 @@ function aplicarTema(t) {
 }
 
 let avisoTimer;
-function aviso(txt) {
+/** aviso('Listo') o aviso('Borrado', { accion: 'Deshacer', alPulsar: fn }) */
+function aviso(txt, { accion, alPulsar, ms } = {}) {
   const el = $('#aviso');
-  el.textContent = txt;
+  el.innerHTML = `<span>${esc(txt)}</span>`;
+  if (accion) {
+    const b = document.createElement('button');
+    b.className = 'aviso-accion';
+    b.textContent = accion;
+    b.onclick = () => { el.hidden = true; clearTimeout(avisoTimer); alPulsar?.(); };
+    el.append(b);
+  }
   el.hidden = false;
   clearTimeout(avisoTimer);
-  avisoTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  avisoTimer = setTimeout(() => { el.hidden = true; }, ms ?? (accion ? 6000 : 2600));
 }

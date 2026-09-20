@@ -26,6 +26,22 @@ export function mesLargo(key) {
   return `${MESES_LARGO[MESES.indexOf(m)]} 20${a}`;
 }
 
+/** Día `dia` del mes `key` como fecha ISO, recortado al último día real */
+export function diaDelMes(key, dia) {
+  const [m, a] = key.split('-');
+  const anio = 2000 + Number(a), mes = MESES.indexOf(m) + 1;
+  const ultimo = new Date(anio, mes, 0).getDate();
+  const d = Math.min(Math.max(1, Number(dia) || 1), ultimo);
+  return `${anio}-${String(mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+/** 'Lácteos, Huevos (Desayunos)' -> 'lacteos-huevos-desayunos' */
+export function slug(txt) {
+  return String(txt ?? '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 /** Mes actual en formato 'sept-26' */
 export function mesHoy() {
   return mesKey(hoyISO());

@@ -90,9 +90,9 @@ enero 2027). Hazlo **una sola vez y desde un solo teléfono**.
 | Pantalla | Para qué |
 |---|---|
 | **Resumen** | Saldo del mes, egresos por categoría, gastado v/s presupuesto y la curva de ingresos v/s egresos mes a mes. |
-| **Registrar** | Monto, concepto, categoría y listo. La fecha viene puesta en hoy. |
+| **Registrar** | Uno por uno, o **Pegar varios**: pegas las anotaciones sueltas y la app las lee. |
 | **Lista** | Dos pestañas: *Falta comprar* (lo que hay que traer, etiquetado por Súper / Feria / Chinos / Otro) y *Se nos antoja* (los deseos para la casa, con precio aproximado). |
-| **Historial** | Todo el mes, buscable, con editar y borrar. |
+| **Historial** | Buscable por mes o en **todos los meses**, con el total de lo filtrado. Editar y borrar con deshacer. |
 | **Ppto** | Las metas mensuales de la hoja *Presupuestos*, editables. |
 | **⚙ Ajustes** | Exportar a Excel o CSV, importar histórico, tema y estado de sincronización. |
 
@@ -100,6 +100,33 @@ Las categorías son exactamente las de la planilla:
 
 - **Ingresos:** Aporte Cami · Aporte Panchi · Baes Panchi · Otros
 - **Egresos:** Gastos · Servicios · Deudas · Ahorro · Gasto Baes
+
+### Pegar varios de una
+
+En *Registrar → Pegar varios* se pega el texto tal como se anotan, una cosa por
+línea. Entiende el monto esté adelante o atrás (`10051 líder`, `Lider 12860`),
+los puntos de miles (`16.880`), el `+` para ingresos, las **lucas** (`30 lucas`
+= 30.000) y los **palos** (millones). Adivina el tipo por palabras como
+*devolución*, *reembolso* o *aporte*, y la categoría por el concepto (*claro* y
+*agua* → Servicios, *refri* y *cuota* → Deudas, el resto → Gastos).
+
+Nunca guarda solo: muestra lo que entendió en una lista editable, con las
+líneas sin monto listadas aparte, y recién ahí se confirma.
+
+### El saldo que se arrastra
+
+Además del saldo del mes, el Resumen muestra **de cuánto se viene** y el **pozo
+acumulado**. Ignora a propósito las filas *"Saldo mes anterior"* que traía la
+planilla: son ese mismo cálculo hecho a mano y contarlas sería sumar dos veces.
+De hecho cuadra — para junio da los mismos $137.888 que había anotado la Cami.
+
+### Gastos fijos
+
+En *Ppto → Gastos fijos* se anotan los que se repiten (luz, agua, Claro, el
+internet) con su día y un monto de referencia. Cuando en el mes todavía no
+existe un movimiento con ese concepto, el Resumen muestra una tarjeta **Fijos
+que faltan este mes**: un toque en *Anotar* abre el formulario con todo puesto
+y solo hay que corregir el monto real. No inventa movimientos solo.
 
 ### La lista de compras
 
@@ -137,6 +164,7 @@ css/estilos.css         estilos (claro y oscuro)
 js/app.js               controlador y render
 js/datos.js             Supabase + caché local + cola offline
 js/graficos.js          gráficos en SVG/HTML, sin librerías
+js/parser.js            lee los movimientos escritos a mano
 js/excel.js             export .xlsx / .csv
 js/util.js              formato de plata, meses, categorías
 datos/historico.json    las 72 filas que venían en la planilla
@@ -152,8 +180,11 @@ sw.js                   service worker (funciona sin señal)
 en especial la parte de `supabase_realtime`. El archivo se puede volver a
 correr entero cuantas veces haga falta: no duplica nada.
 
-**Actualicé la app y falta la tabla `lista`** — vuelve a correr `esquema.sql`
-completo; crea lo que falte y deja lo que ya estaba tal cual.
+**Actualicé la app y falta una tabla (`lista`, `fijos`)** — vuelve a correr
+`esquema.sql` completo; crea lo que falte y deja lo que ya estaba tal cual.
+
+**Borré algo sin querer** — el aviso de abajo ofrece *Deshacer* por unos
+segundos. Si ya se fue, el movimiento se puede volver a crear a mano.
 
 **Cambié un archivo y el celular muestra lo viejo** — el service worker cachea.
 Sube el número de `VERSION` en `sw.js` y recarga.
