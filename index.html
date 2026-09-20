@@ -259,8 +259,20 @@
   </div>
 
   <div class="tarjeta">
+    <h3>Cargar desde la planilla</h3>
+    <p class="ayuda mini">Exporta la hoja <em>Registros</em> como CSV y súbelo acá.
+      Lee las columnas <code>Fecha · Tipo · Categoría · Concepto · Presupuestos · Monto</code>.</p>
+    <label class="archivo">
+      <input type="file" id="csv-archivo" accept=".csv,text/csv">
+      <span>Elegir archivo CSV…</span>
+    </label>
+    <div id="csv-previo"></div>
+  </div>
+
+  <div class="tarjeta">
     <h3>Histórico</h3>
-    <p class="ayuda mini">Carga las <span id="n-historico">72</span> filas que ya estaban en la planilla. Solo la primera vez.</p>
+    <p class="ayuda mini">Vuelve a cargar las <span id="n-historico">96</span> filas que trae la app,
+      sin repetir las que ya estén.</p>
     <button class="secundario" id="btn-importar">Importar histórico</button>
     <p class="ayuda" id="import-estado"></p>
   </div>

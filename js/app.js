@@ -3,6 +3,7 @@ import { datos, LUGARES } from './datos.js';
 import { barrasRankeadas, bullet, lineas } from './graficos.js';
 import { exportarXlsx, exportarCsv } from './excel.js';
 import { parsear, categoriaDe } from './parser.js';
+import { leerTexto, parsearCsv } from './csv.js';
 import {
   CATEGORIAS, clp, diaDelMes, esc, fechaCorta, hoyISO, mesHoy, mesKey, mesLargo,
   mesOrden, aNumero, uid,
@@ -22,6 +23,7 @@ const estado = {
   lugarNuevo: LUGARES[0],
   filtroLugar: 'Todo',
   modoRegistro: 'uno',
+  csv: [],
   previo: [],
   ignoradas: [],
 };
@@ -194,6 +196,7 @@ function cablear() {
     catch { aviso('No se pudo sincronizar.'); }
   };
   $('#btn-importar').onclick = importarHistorico;
+  $('#csv-archivo').onchange = leerCsv;
   $$('#seg-tema .seg').forEach(b => b.onclick = () => aplicarTema(b.dataset.tema));
 
   document.addEventListener('input', ev => {
@@ -880,6 +883,92 @@ function formatearMiles(input) {
   input.value = n ? Number(n).toLocaleString('es-CL') : '';
   const delta = input.value.length - largoAntes;
   try { input.setSelectionRange(pos + delta, pos + delta); } catch {}
+}
+
+/* ================== cargar un CSV de la planilla ================== */
+
+async function leerCsv(ev) {
+  const archivo = ev.target.files?.[0];
+  const cont = $('#csv-previo');
+  if (!archivo) { cont.innerHTML = ''; return; }
+
+  let leido;
+  try {
+    leido = parsearCsv(await leerTexto(archivo));
+  } catch {
+    cont.innerHTML = '<p class="error">No pude leer ese archivo.</p>';
+    return;
+  }
+
+  const { movimientos, sinMonto } = leido;
+  estado.csv = movimientos;
+  if (!movimientos.length) {
+    cont.innerHTML = '<p class="error">No encontré movimientos con fecha y monto en ese CSV.</p>';
+    return;
+  }
+
+  // resumen por mes, para que se vea qué trae antes de decidir
+  const porMes = new Map();
+  for (const m of movimientos) {
+    const k = mesKey(m.fecha);
+    if (!porMes.has(k)) porMes.set(k, { n: 0, ing: 0, egr: 0 });
+    const g = porMes.get(k);
+    g.n++; g[m.tipo === 'Ingreso' ? 'ing' : 'egr'] += m.monto;
+  }
+  const meses = [...porMes].sort((a, b) => mesOrden(a[0]).localeCompare(mesOrden(b[0])));
+
+  cont.innerHTML = `
+    <p class="ayuda" style="margin-top:14px"><b>${movimientos.length} movimientos</b> en el archivo.</p>
+    <table><thead><tr><th>Mes</th><th class="num">Mov.</th><th class="num">Ingresos</th><th class="num">Egresos</th></tr></thead>
+      <tbody>${meses.map(([k, g]) => `<tr><td>${esc(mesLargo(k))}</td>
+        <td class="num">${g.n}</td><td class="num">${clp(g.ing)}</td><td class="num">${clp(g.egr)}</td></tr>`).join('')}
+      </tbody></table>
+    ${sinMonto.length ? `<p class="ayuda mini" style="margin-top:10px">
+      ${sinMonto.length} fila(s) sin monto quedaron fuera (proyecciones): ${sinMonto.slice(0, 4).map(esc).join(' · ')}${sinMonto.length > 4 ? '…' : ''}</p>` : ''}
+    <div class="acciones">
+      <button class="secundario" type="button" id="csv-agregar">Agregar las que falten</button>
+      <button class="secundario peligro" type="button" id="csv-reemplazar">Reemplazar todo</button>
+    </div>
+    <p class="ayuda mini" style="margin-top:10px">
+      <b>Agregar</b> suma solo lo que no esté ya cargado.
+      <b>Reemplazar</b> borra los ${datos.movimientos.length} movimientos actuales y deja
+      exactamente lo del archivo — úsalo cuando el CSV sea la versión cuadrada.</p>
+    <p class="ayuda" id="csv-estado"></p>`;
+
+  $('#csv-agregar').onclick = () => aplicarCsv(false);
+  $('#csv-reemplazar').onclick = () => confirmarReemplazo();
+}
+
+function confirmarReemplazo() {
+  const est = $('#csv-estado');
+  est.innerHTML = `<b>¿Seguro?</b> Se borran los ${datos.movimientos.length} movimientos
+    que hay hoy (en los dos teléfonos) y quedan los ${estado.csv.length} del archivo.
+    Las listas, los presupuestos y los fijos no se tocan.`;
+  const si = document.createElement('button');
+  si.className = 'secundario peligro chico';
+  si.textContent = 'Sí, reemplazar';
+  si.style.marginTop = '10px';
+  si.onclick = () => aplicarCsv(true);
+  est.after(si);
+  $('#csv-reemplazar').disabled = true;
+}
+
+async function aplicarCsv(reemplazar) {
+  const est = $('#csv-estado');
+  est.textContent = reemplazar ? 'Borrando y cargando…' : 'Cargando…';
+  $$('#csv-previo button').forEach(b => b.disabled = true);
+  try {
+    if (reemplazar) await datos.borrarTodos();
+    const n = await datos.importar(estado.csv);
+    est.innerHTML = `<b>Listo.</b> ${n} movimiento${n === 1 ? '' : 's'} cargado${n === 1 ? '' : 's'}` +
+      (n < estado.csv.length ? `; ${estado.csv.length - n} ya estaban.` : '.');
+    $('#csv-archivo').value = '';
+    estado.mes = mesHoy();
+    pintarTodo();
+  } catch (e) {
+    est.innerHTML = `<span class="error">No se pudo: ${esc(e.message || e)}</span>`;
+    $$('#csv-previo button').forEach(b => b.disabled = false);
+  }
 }
 
 /* ================== histórico ================== */

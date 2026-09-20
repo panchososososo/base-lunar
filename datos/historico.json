@@ -37,7 +37,7 @@
   "categoria": "Gasto Baes",
   "concepto": "Despensa",
   "presupuesto": 48000,
-  "monto": 47000
+  "monto": 48000
  },
  {
   "fecha": "2026-06-14",
@@ -85,7 +85,7 @@
   "categoria": "Baes Panchi",
   "concepto": "Baes panchito",
   "presupuesto": 48000,
-  "monto": 72170
+  "monto": 72000
  },
  {
   "fecha": "2026-07-01",
@@ -107,25 +107,9 @@
   "fecha": "2026-07-02",
   "tipo": "Egreso",
   "categoria": "Gastos",
-  "concepto": "Piso Vinílico",
-  "presupuesto": 112000,
-  "monto": 112000
- },
- {
-  "fecha": "2026-07-02",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
   "concepto": "Pintura",
   "presupuesto": 50000,
-  "monto": 50000
- },
- {
-  "fecha": "2026-07-02",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Pegamento piso",
-  "presupuesto": 90000,
-  "monto": 90000
+  "monto": 32895
  },
  {
   "fecha": "2026-07-02",
@@ -144,15 +128,95 @@
   "monto": 121719
  },
  {
-  "fecha": "2026-07-25",
+  "fecha": "2026-07-04",
   "tipo": "Egreso",
-  "categoria": "Deudas",
-  "concepto": "Refri 2/6",
-  "presupuesto": 55000,
-  "monto": 63338
+  "categoria": "Gastos",
+  "concepto": "sodimac",
+  "presupuesto": null,
+  "monto": 10900
  },
  {
-  "fecha": "2026-07-25",
+  "fecha": "2026-07-05",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 21450
+ },
+ {
+  "fecha": "2026-07-06",
+  "tipo": "Egreso",
+  "categoria": "Gasto Baes",
+  "concepto": "Super baes",
+  "presupuesto": null,
+  "monto": 72000
+ },
+ {
+  "fecha": "2026-07-07",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "gas de 15 lleno",
+  "presupuesto": null,
+  "monto": 60600
+ },
+ {
+  "fecha": "2026-07-07",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "liquimax",
+  "presupuesto": null,
+  "monto": 16780
+ },
+ {
+  "fecha": "2026-07-08",
+  "tipo": "Egreso",
+  "categoria": "Servicios",
+  "concepto": "Agua",
+  "presupuesto": null,
+  "monto": 7860
+ },
+ {
+  "fecha": "2026-07-09",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 3660
+ },
+ {
+  "fecha": "2026-07-10",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Piso",
+  "presupuesto": 120000,
+  "monto": 108000
+ },
+ {
+  "fecha": "2026-07-10",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Pegamento piso",
+  "presupuesto": 80000,
+  "monto": 74690
+ },
+ {
+  "fecha": "2026-07-15",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "limpiador enzimatoide",
+  "presupuesto": null,
+  "monto": 14990
+ },
+ {
+  "fecha": "2026-07-16",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "llana dentada y lija",
+  "presupuesto": null,
+  "monto": 7790
+ },
+ {
+  "fecha": "2026-07-17",
   "tipo": "Egreso",
   "categoria": "Deudas",
   "concepto": "Estufa 2/3",
@@ -162,18 +226,18 @@
  {
   "fecha": "2026-07-25",
   "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Agua",
-  "presupuesto": 15000,
-  "monto": 10000
+  "categoria": "Deudas",
+  "concepto": "Refri 1/6",
+  "presupuesto": 55000,
+  "monto": 63338
  },
  {
-  "fecha": "2026-07-25",
-  "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Luz",
-  "presupuesto": 30000,
-  "monto": 40000
+  "fecha": "2026-08-01",
+  "tipo": "Ingreso",
+  "categoria": "Otros",
+  "concepto": "Saldo mes anterior",
+  "presupuesto": null,
+  "monto": 36039
  },
  {
   "fecha": "2026-08-01",
@@ -197,13 +261,165 @@
   "categoria": "Aporte Panchi",
   "concepto": "Aporte Panchi",
   "presupuesto": 170000,
-  "monto": 100000
+  "monto": 170000
+ },
+ {
+  "fecha": "2026-08-02",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Pintura",
+  "presupuesto": null,
+  "monto": 27990
+ },
+ {
+  "fecha": "2026-08-03",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Topper",
+  "presupuesto": null,
+  "monto": 29990
+ },
+ {
+  "fecha": "2026-08-08",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Pancito",
+  "presupuesto": null,
+  "monto": 8310
+ },
+ {
+  "fecha": "2026-08-08",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Flete",
+  "presupuesto": null,
+  "monto": 40000
+ },
+ {
+  "fecha": "2026-08-09",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 23430
+ },
+ {
+  "fecha": "2026-08-09",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Pintura mueble y articulos para pintar",
+  "presupuesto": null,
+  "monto": 23680
+ },
+ {
+  "fecha": "2026-08-10",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 3190
+ },
+ {
+  "fecha": "2026-08-10",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 11980
+ },
+ {
+  "fecha": "2026-08-11",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Huevos",
+  "presupuesto": null,
+  "monto": 12800
+ },
+ {
+  "fecha": "2026-08-12",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "pintura azul y cafe",
+  "presupuesto": null,
+  "monto": 3980
+ },
+ {
+  "fecha": "2026-08-12",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Pintura corrección color",
+  "presupuesto": null,
+  "monto": 1990
+ },
+ {
+  "fecha": "2026-08-13",
+  "tipo": "Egreso",
+  "categoria": "Servicios",
+  "concepto": "Internet",
+  "presupuesto": null,
+  "monto": 12990
+ },
+ {
+  "fecha": "2026-08-16",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 38810
+ },
+ {
+  "fecha": "2026-08-16",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Chinos",
+  "presupuesto": null,
+  "monto": 8100
+ },
+ {
+  "fecha": "2026-08-18",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "supermercado",
+  "presupuesto": null,
+  "monto": 56324
+ },
+ {
+  "fecha": "2026-08-19",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Supermercado",
+  "presupuesto": null,
+  "monto": 10051
+ },
+ {
+  "fecha": "2026-08-20",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "sodimac",
+  "presupuesto": null,
+  "monto": 21680
+ },
+ {
+  "fecha": "2026-08-23",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "supermercado cumple josue",
+  "presupuesto": null,
+  "monto": 33650
+ },
+ {
+  "fecha": "2026-08-24",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Limpia horno y aromatizante",
+  "presupuesto": null,
+  "monto": 16880
  },
  {
   "fecha": "2026-08-25",
   "tipo": "Egreso",
   "categoria": "Deudas",
-  "concepto": "Refri 3/6",
+  "concepto": "Refri 2/6",
   "presupuesto": 55000,
   "monto": 63338
  },
@@ -218,26 +434,58 @@
  {
   "fecha": "2026-08-25",
   "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Supermercado",
-  "presupuesto": 250000,
-  "monto": 250000
- },
- {
-  "fecha": "2026-08-25",
-  "tipo": "Egreso",
   "categoria": "Servicios",
   "concepto": "Agua",
-  "presupuesto": 25000,
-  "monto": 20000
+  "presupuesto": 10000,
+  "monto": 9240
  },
  {
   "fecha": "2026-08-25",
   "tipo": "Egreso",
   "categoria": "Servicios",
   "concepto": "Luz",
-  "presupuesto": 30000,
-  "monto": 30000
+  "presupuesto": 25000,
+  "monto": 33630
+ },
+ {
+  "fecha": "2026-08-29",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Feria agosto",
+  "presupuesto": null,
+  "monto": 20000
+ },
+ {
+  "fecha": "2026-08-30",
+  "tipo": "Ingreso",
+  "categoria": "Otros",
+  "concepto": "Tupper devolucion",
+  "presupuesto": null,
+  "monto": 29990
+ },
+ {
+  "fecha": "2026-08-31",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "tiradores dorados",
+  "presupuesto": null,
+  "monto": 6830
+ },
+ {
+  "fecha": "2026-08-31",
+  "tipo": "Egreso",
+  "categoria": "Gasto Baes",
+  "concepto": "Baes panchito",
+  "presupuesto": null,
+  "monto": 48000
+ },
+ {
+  "fecha": "2026-09-01",
+  "tipo": "Ingreso",
+  "categoria": "Otros",
+  "concepto": "Saldo mes anterior",
+  "presupuesto": null,
+  "monto": 10739
  },
  {
   "fecha": "2026-09-01",
@@ -246,6 +494,22 @@
   "concepto": "Aporte Cami",
   "presupuesto": 300000,
   "monto": 325000
+ },
+ {
+  "fecha": "2026-09-01",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "Carne santa isabel",
+  "presupuesto": null,
+  "monto": 28969
+ },
+ {
+  "fecha": "2026-09-01",
+  "tipo": "Egreso",
+  "categoria": "Gasto Baes",
+  "concepto": "Baes panchito",
+  "presupuesto": null,
+  "monto": 48000
  },
  {
   "fecha": "2026-09-01",
@@ -261,146 +525,162 @@
   "categoria": "Aporte Panchi",
   "concepto": "Aporte Panchi",
   "presupuesto": 170000,
-  "monto": 170000
+  "monto": 100000
  },
  {
-  "fecha": "2026-09-15",
-  "tipo": "Ingreso",
-  "categoria": "Otros",
-  "concepto": "Devolución tupper de la cama",
+  "fecha": "2026-09-01",
+  "tipo": "Egreso",
+  "categoria": "Deudas",
+  "concepto": "Aspiradora,mealprep,etc 1/3",
   "presupuesto": null,
-  "monto": 30000
+  "monto": 26440
  },
  {
-  "fecha": "2026-09-15",
-  "tipo": "Ingreso",
-  "categoria": "Otros",
-  "concepto": "Aporte papá (psicólogo)",
-  "presupuesto": null,
-  "monto": 15000
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Ingreso",
-  "categoria": "Otros",
-  "concepto": "Reembolso Metlife",
-  "presupuesto": null,
-  "monto": 81755
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Ingreso",
-  "categoria": "Otros",
-  "concepto": "Aporte tía (psicólogo)",
-  "presupuesto": null,
-  "monto": 15000
- },
- {
-  "fecha": "2026-09-15",
+  "fecha": "2026-09-02",
   "tipo": "Egreso",
   "categoria": "Gastos",
-  "concepto": "Líder",
+  "concepto": "cubeteras",
   "presupuesto": null,
-  "monto": 10051
+  "monto": 13660
  },
  {
-  "fecha": "2026-09-15",
+  "fecha": "2026-09-05",
   "tipo": "Egreso",
   "categoria": "Gastos",
-  "concepto": "Líder",
-  "presupuesto": null,
-  "monto": 12860
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Super 10",
+  "concepto": "super10",
   "presupuesto": null,
   "monto": 23720
  },
  {
-  "fecha": "2026-09-15",
+  "fecha": "2026-09-05",
   "tipo": "Egreso",
   "categoria": "Gastos",
-  "concepto": "Chinos",
+  "concepto": "chinos",
   "presupuesto": null,
   "monto": 8500
  },
  {
-  "fecha": "2026-09-15",
+  "fecha": "2026-09-05",
   "tipo": "Egreso",
   "categoria": "Gastos",
-  "concepto": "Feria",
+  "concepto": "lider",
+  "presupuesto": null,
+  "monto": 12860
+ },
+ {
+  "fecha": "2026-09-06",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "feria",
   "presupuesto": null,
   "monto": 20000
  },
  {
-  "fecha": "2026-09-15",
+  "fecha": "2026-09-06",
   "tipo": "Egreso",
   "categoria": "Gastos",
-  "concepto": "Feria",
-  "presupuesto": null,
-  "monto": 20000
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Carnicería",
-  "presupuesto": null,
-  "monto": 28969
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Carnicería",
-  "presupuesto": null,
-  "monto": 18214
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Huevos",
+  "concepto": "huevos",
   "presupuesto": null,
   "monto": 15000
  },
  {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Sodimac",
-  "presupuesto": null,
-  "monto": 21680
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Limpiador horno y aromatizante",
-  "presupuesto": null,
-  "monto": 16880
- },
- {
-  "fecha": "2026-09-15",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Psicólogo",
-  "presupuesto": null,
-  "monto": 134362
- },
- {
-  "fecha": "2026-09-15",
+  "fecha": "2026-09-07",
   "tipo": "Egreso",
   "categoria": "Servicios",
-  "concepto": "Claro",
+  "concepto": "Agua",
+  "presupuesto": 10000,
+  "monto": 9240
+ },
+ {
+  "fecha": "2026-09-09",
+  "tipo": "Egreso",
+  "categoria": "Servicios",
+  "concepto": "Internet",
   "presupuesto": null,
   "monto": 12990
  },
  {
-  "fecha": "2026-09-25",
+  "fecha": "2026-09-09",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "carne muelta",
+  "presupuesto": null,
+  "monto": 18214
+ },
+ {
+  "fecha": "2026-09-14",
+  "tipo": "Egreso",
+  "categoria": "Servicios",
+  "concepto": "Luz",
+  "presupuesto": 25000,
+  "monto": 46170
+ },
+ {
+  "fecha": "2026-09-15",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "lubricante",
+  "presupuesto": null,
+  "monto": 18990
+ },
+ {
+  "fecha": "2026-09-20",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "huevos",
+  "presupuesto": null,
+  "monto": 6300
+ },
+ {
+  "fecha": "2026-09-20",
+  "tipo": "Egreso",
+  "categoria": "Gastos",
+  "concepto": "cerradura",
+  "presupuesto": null,
+  "monto": 10690
+ },
+ {
+  "fecha": "2026-09-20",
+  "tipo": "Egreso",
+  "categoria": "Deudas",
+  "concepto": "Refri 3/6",
+  "presupuesto": 55000,
+  "monto": 63338
+ },
+ {
+  "fecha": "2026-10-01",
+  "tipo": "Egreso",
+  "categoria": "Deudas",
+  "concepto": "Aspiradora,mealprep,etc 2/3",
+  "presupuesto": null,
+  "monto": 26440
+ },
+ {
+  "fecha": "2026-10-01",
+  "tipo": "Ingreso",
+  "categoria": "Aporte Cami",
+  "concepto": "Aporte Cami",
+  "presupuesto": 300000,
+  "monto": 325000
+ },
+ {
+  "fecha": "2026-10-01",
+  "tipo": "Ingreso",
+  "categoria": "Baes Panchi",
+  "concepto": "Baes panchito",
+  "presupuesto": 48000,
+  "monto": 48000
+ },
+ {
+  "fecha": "2026-10-01",
+  "tipo": "Ingreso",
+  "categoria": "Aporte Panchi",
+  "concepto": "Aporte Panchi",
+  "presupuesto": 170000,
+  "monto": 100000
+ },
+ {
+  "fecha": "2026-10-25",
   "tipo": "Egreso",
   "categoria": "Deudas",
   "concepto": "Refri 4/6",
@@ -408,23 +688,15 @@
   "monto": 63338
  },
  {
-  "fecha": "2026-09-25",
+  "fecha": "2026-11-01",
   "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Agua",
-  "presupuesto": 25000,
-  "monto": 9240
+  "categoria": "Deudas",
+  "concepto": "Aspiradora,mealprep,etc 3/3",
+  "presupuesto": null,
+  "monto": 26440
  },
  {
-  "fecha": "2026-09-25",
-  "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Luz",
-  "presupuesto": 30000,
-  "monto": 30000
- },
- {
-  "fecha": "2026-10-01",
+  "fecha": "2026-11-01",
   "tipo": "Ingreso",
   "categoria": "Aporte Cami",
   "concepto": "Aporte Cami",
@@ -432,7 +704,7 @@
   "monto": 325000
  },
  {
-  "fecha": "2026-10-01",
+  "fecha": "2026-11-01",
   "tipo": "Ingreso",
   "categoria": "Baes Panchi",
   "concepto": "Baes panchito",
@@ -440,15 +712,15 @@
   "monto": 48000
  },
  {
-  "fecha": "2026-10-01",
+  "fecha": "2026-11-01",
   "tipo": "Ingreso",
   "categoria": "Aporte Panchi",
   "concepto": "Aporte Panchi",
   "presupuesto": 170000,
-  "monto": 170000
+  "monto": 100000
  },
  {
-  "fecha": "2026-10-25",
+  "fecha": "2026-11-25",
   "tipo": "Egreso",
   "categoria": "Deudas",
   "concepto": "Refri 5/6",
@@ -456,86 +728,6 @@
   "monto": 63338
  },
  {
-  "fecha": "2026-10-25",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Supermercado",
-  "presupuesto": 250000,
-  "monto": 250000
- },
- {
-  "fecha": "2026-10-25",
-  "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Agua",
-  "presupuesto": 25000,
-  "monto": 20000
- },
- {
-  "fecha": "2026-10-25",
-  "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Luz",
-  "presupuesto": 30000,
-  "monto": 30000
- },
- {
-  "fecha": "2026-11-01",
-  "tipo": "Ingreso",
-  "categoria": "Aporte Cami",
-  "concepto": "Aporte Cami",
-  "presupuesto": 300000,
-  "monto": 325000
- },
- {
-  "fecha": "2026-11-01",
-  "tipo": "Ingreso",
-  "categoria": "Baes Panchi",
-  "concepto": "Baes panchito",
-  "presupuesto": 48000,
-  "monto": 48000
- },
- {
-  "fecha": "2026-11-01",
-  "tipo": "Ingreso",
-  "categoria": "Aporte Panchi",
-  "concepto": "Aporte Panchi",
-  "presupuesto": 170000,
-  "monto": 170000
- },
- {
-  "fecha": "2026-11-25",
-  "tipo": "Egreso",
-  "categoria": "Deudas",
-  "concepto": "Refri 6/6",
-  "presupuesto": 55000,
-  "monto": 63338
- },
- {
-  "fecha": "2026-11-25",
-  "tipo": "Egreso",
-  "categoria": "Gastos",
-  "concepto": "Supermercado",
-  "presupuesto": 250000,
-  "monto": 250000
- },
- {
-  "fecha": "2026-11-25",
-  "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Agua",
-  "presupuesto": 25000,
-  "monto": 20000
- },
- {
-  "fecha": "2026-11-25",
-  "tipo": "Egreso",
-  "categoria": "Servicios",
-  "concepto": "Luz",
-  "presupuesto": 30000,
-  "monto": 30000
- },
- {
   "fecha": "2026-12-01",
   "tipo": "Ingreso",
   "categoria": "Aporte Cami",
@@ -557,13 +749,13 @@
   "categoria": "Aporte Panchi",
   "concepto": "Aporte Panchi",
   "presupuesto": 170000,
-  "monto": 170000
+  "monto": 100000
  },
  {
   "fecha": "2026-12-25",
   "tipo": "Egreso",
   "categoria": "Deudas",
-  "concepto": "Refri 1/6",
+  "concepto": "Refri 6/6",
   "presupuesto": 55000,
   "monto": 63338
  },

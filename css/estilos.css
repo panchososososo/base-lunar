@@ -359,6 +359,18 @@ code {
   text-align: center; padding: 0 4px;
 }
 
+/* ---------- subir archivo ---------- */
+.archivo { display: block; margin-top: 12px; }
+.archivo input { position: absolute; opacity: 0; width: 0; height: 0; }
+.archivo span {
+  display: block; text-align: center; cursor: pointer;
+  background: var(--surface-2); color: var(--text-primary);
+  border: 1px dashed var(--borde); border-radius: 12px; padding: 14px 16px;
+  font-weight: 550; font-size: 14px;
+}
+.archivo input:focus-visible + span { outline: 2px solid var(--acento); outline-offset: 2px; }
+.secundario.peligro { color: var(--mal); border-color: var(--mal); }
+
 /* ---------- barra inferior ---------- */
 .barra-inf {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;

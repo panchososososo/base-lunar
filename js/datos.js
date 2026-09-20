@@ -220,6 +220,20 @@ export const datos = {
     return nuevas.length;
   },
 
+  /** Borra TODOS los movimientos. Solo se llama desde un botón que avisa. */
+  async borrarTodos() {
+    const n = this.movimientos.length;
+    this.movimientos = [];
+    guardar(K_MOV, this.movimientos);
+    this.alCambiar();
+    if (this.enLinea) {
+      // el filtro es obligatorio en PostgREST: "todo lo que tenga fecha"
+      const { error } = await this.sb.from('movimientos').delete().not('fecha', 'is', null);
+      if (error) throw error;
+    }
+    return n;
+  },
+
   // ---------- presupuestos ----------
   // Se identifican por `clasificacion`, no por el id local: así dos teléfonos
   // que todavía no sincronizan no terminan creando dos "Feria".
