@@ -200,7 +200,7 @@ function cablear() {
   $$('#seg-tema .seg').forEach(b => b.onclick = () => aplicarTema(b.dataset.tema));
 
   document.addEventListener('input', ev => {
-    if (ev.target.matches('#f-monto, #f-ppto, #p-monto, #d-precio')) formatearMiles(ev.target);
+    if (ev.target.matches('#f-monto, #f-ppto, #p-monto, #d-precio, .fj-m')) formatearMiles(ev.target);
   });
 }
 
@@ -339,12 +339,25 @@ function acumuladoHasta(mes, { incluir = true } = {}) {
 
 /* ---------- gastos fijos ---------- */
 
-/** Los fijos que este mes todavía no tienen un movimiento con ese concepto. */
+const sinTilde = s => String(s ?? '').normalize('NFD')
+  .replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const escapaRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Los fijos que este mes todavía no están anotados.
+ * Se considera anotado si en el mes hay un movimiento de la MISMA categoría
+ * cuyo concepto contiene el nombre del fijo como palabra completa. Así
+ * "Internet" pilla a "internet claro", sin que "Luz" se dé por pagada con
+ * unas "ampolletas luz led" (esas van en Gastos, no en Servicios).
+ */
 function fijosPendientes(mes) {
-  const hechos = new Set(
-    datos.movimientos.filter(m => mesKey(m.fecha) === mes)
-      .map(m => m.concepto.trim().toLowerCase()));
-  return datos.fijos.filter(f => !hechos.has(f.concepto.trim().toLowerCase()));
+  const delMes = datos.movimientos.filter(m => mesKey(m.fecha) === mes);
+  return datos.fijos.filter(f => {
+    const nombre = sinTilde(f.concepto);
+    if (!nombre) return false;
+    const re = new RegExp(`(^|[^a-z0-9])${escapaRe(nombre)}([^a-z0-9]|$)`);
+    return !delMes.some(m => m.categoria === f.categoria && re.test(sinTilde(m.concepto)));
+  });
 }
 
 function pintarFijosPendientes() {
@@ -394,22 +407,39 @@ function pintarFijos() {
     return;
   }
   cont.innerHTML = datos.fijos.map(f => `
-    <div class="fila-ppto" data-id="${f.id}">
-      <span>${esc(f.concepto)}<br><small class="ayuda mini">${esc(f.categoria)} · día ${f.dia}</small></span>
-      <span class="num" style="flex:none;font-variant-numeric:tabular-nums">${f.monto ? clp(f.monto) : '—'}</span>
+    <div class="fijo-fila" data-id="${f.id}">
+      <input class="fj-nombre" value="${esc(f.concepto)}" aria-label="Nombre del fijo">
+      <input class="fj-m" inputmode="numeric" placeholder="—"
+             value="${f.monto ? f.monto.toLocaleString('es-CL') : ''}" aria-label="Monto">
+      <input class="fj-d" type="number" min="1" max="31" value="${f.dia}" aria-label="Día">
       <button class="icono-btn chico" data-op="borrar" aria-label="Borrar">
         <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
       </button>
     </div>`).join('');
 
-  cont.querySelectorAll('.fila-ppto').forEach(el => {
+  cont.querySelectorAll('.fijo-fila').forEach(el => {
+    const f = datos.fijos.find(x => x.id === el.dataset.id);
+    const guardar = async () => {
+      const concepto = el.querySelector('.fj-nombre').value.trim();
+      if (!concepto) { el.querySelector('.fj-nombre').value = f.concepto; return; }
+      await datos.guardarFijo({
+        ...f, concepto,
+        monto: aNumero(el.querySelector('.fj-m').value),
+        dia: Math.min(31, Math.max(1, Number(el.querySelector('.fj-d').value) || f.dia)),
+        categoria: categoriaDe(concepto, 'Egreso'),
+      });
+      pintarFijosPendientes();
+      aviso('Fijo actualizado.');
+    };
+    el.querySelectorAll('input').forEach(i => i.onchange = guardar);
+
     el.querySelector('[data-op="borrar"]').onclick = async () => {
-      const f = datos.fijos.find(x => x.id === el.dataset.id);
       await datos.borrarFijo(f.id);
       pintarFijos();
+      pintarFijosPendientes();
       aviso(`Quitado de los fijos: ${f.concepto}`, {
         accion: 'Deshacer',
-        alPulsar: async () => { await datos.guardarFijo(f); pintarFijos(); },
+        alPulsar: async () => { await datos.guardarFijo(f); pintarFijos(); pintarFijosPendientes(); },
       });
     };
   });
