@@ -4,6 +4,7 @@ import { barrasRankeadas, bullet, lineas } from './graficos.js';
 import { exportarXlsx, exportarCsv } from './excel.js';
 import { parsear, categoriaDe } from './parser.js';
 import { leerTexto, parsearCsv } from './csv.js';
+import * as sec from './secciones.js';
 import {
   CATEGORIAS, clp, diaDelMes, esc, fechaCorta, hoyISO, mesHoy, mesKey, mesLargo,
   mesOrden, aNumero, uid,
@@ -170,10 +171,23 @@ function cablear() {
     ev.preventDefault();
     const nombre = $('#i-nombre').value.trim();
     if (!nombre) return;
-    await datos.agregarItem({ tipo: 'Falta', nombre, lugar: estado.lugarNuevo });
-    $('#i-nombre').value = '';
-    $('#i-nombre').focus();
-    pintarLista();
+    const agregar = async () => {
+      const it = await datos.agregarItem({ tipo: 'Falta', nombre, lugar: estado.lugarNuevo });
+      $('#i-nombre').value = '';
+      $('#i-nombre').focus();
+      pintarLista();
+      const s = sec.seccionDeItem(it);
+      if (sec.ocultas().has(s)) aviso(`${nombre} quedó en ${s}, que está oculta.`);
+    };
+    // aviso si ya está pendiente en la lista (mismo nombre, plural o tildes aparte)
+    const k = sec.clave(nombre);
+    const repetido = datos.lista.find(i => i.tipo === 'Falta' && !i.listo && sec.clave(i.nombre) === k);
+    if (repetido) {
+      aviso(`“${repetido.nombre}” ya está en la lista.`, { accion: 'Agregar igual', alPulsar: agregar });
+      $('#i-nombre').select();
+      return;
+    }
+    await agregar();
   };
   $('#form-deseo').onsubmit = async ev => {
     ev.preventDefault();
@@ -198,6 +212,7 @@ function cablear() {
   $('#btn-importar').onclick = importarHistorico;
   $('#csv-archivo').onchange = leerCsv;
   $$('#seg-tema .seg').forEach(b => b.onclick = () => aplicarTema(b.dataset.tema));
+  $('#btn-recorrido-lider').onclick = () => { sec.restablecerOrden(); pintarRecorrido(); };
 
   document.addEventListener('input', ev => {
     if (ev.target.matches('#f-monto, #f-ppto, #p-monto, #d-precio, .fj-m')) formatearMiles(ev.target);
@@ -586,7 +601,7 @@ function itemHTML(i, { precio = false } = {}) {
     : '';
   const bajo = precio
     ? (i.nota ? `<small>${esc(i.nota)}</small>` : '')
-    : (i.lugar ? `<small>${esc(i.lugar)}</small>` : '');
+    : `<small>${i.lugar ? `${esc(i.lugar)} · ` : ''}${selectorSeccion(i)}</small>`;
   return `<div class="item${i.listo ? ' listo' : ''}" data-id="${i.id}">
     <button class="tic" data-op="tic" aria-label="${i.listo ? 'Desmarcar' : 'Marcar'}"
             aria-pressed="${i.listo}">${ICONO_TIC}</button>
@@ -596,12 +611,25 @@ function itemHTML(i, { precio = false } = {}) {
   </div>`;
 }
 
+function selectorSeccion(i) {
+  const actual = sec.seccionDeItem(i);
+  const ops = [...sec.orden(), sec.OTROS].map(s =>
+    `<option${s === actual ? ' selected' : ''}>${esc(s)}</option>`).join('');
+  return `<select class="sel-seccion" data-op="seccion" aria-label="Sección de ${esc(i.nombre)}">${ops}</select>`;
+}
+
 function conectarItems(cont, despues) {
   cont.querySelectorAll('.item').forEach(el => {
     const it = datos.lista.find(x => x.id === el.dataset.id);
     if (!it) return;
     el.querySelector('[data-op="tic"]').onclick = async () => {
       await datos.editarItem({ id: it.id, listo: !it.listo });
+      despues();
+    };
+    const sel = el.querySelector('[data-op="seccion"]');
+    if (sel) sel.onchange = async () => {
+      sec.aprender(it.nombre, sel.value);     // la próxima vez lo pone solo
+      await datos.editarItem({ id: it.id, seccion: sel.value });
       despues();
     };
     el.querySelector('[data-op="quitar"]').onclick = async () => {
@@ -647,11 +675,38 @@ function pintarFalta() {
   const visibles = estado.filtroLugar === 'Todo'
     ? pendientes : pendientes.filter(i => i.lugar === estado.filtroLugar);
 
+  // agrupar por sección, en el orden del recorrido
+  const recorrido = [...sec.orden(), sec.OTROS];
+  const ocultas = sec.ocultas();
+  const grupos = recorrido
+    .map(s => ({ s, items: visibles.filter(i => sec.seccionDeItem(i) === s) }))
+    .filter(g => g.items.length);
+
+  // chips para ocultar / mostrar secciones sin borrar nada
+  $('#filtros-seccion').innerHTML = grupos.length > 1 || ocultas.size
+    ? grupos.map(g =>
+        `<button type="button" class="chip${ocultas.has(g.s) ? '' : ' activo'}" data-s="${esc(g.s)}"
+           aria-pressed="${!ocultas.has(g.s)}">${esc(g.s)} ${g.items.length}</button>`).join('')
+    : '';
+  $('#filtros-seccion').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    sec.alternarOculta(b.dataset.s);
+    pintarFalta();
+  });
+
+  const vistos = grupos.filter(g => !ocultas.has(g.s));
+  const nOcultos = grupos.filter(g => ocultas.has(g.s)).reduce((n, g) => n + g.items.length, 0);
+
   const cont = $('#items-falta');
   cont.innerHTML =
-    (visibles.length
-      ? visibles.map(i => itemHTML(i)).join('')
-      : `<p class="vacio">${todos.length ? 'Nada pendiente acá.' : 'No falta nada… por ahora.'}</p>`) +
+    (vistos.length
+      ? vistos.map(g =>
+          `<div class="sub-lista seccion"><h4>${esc(g.s)}</h4><span>${g.items.length}</span></div>` +
+          g.items.map(i => itemHTML(i)).join('')).join('')
+      : (nOcultos ? '' : `<p class="vacio">${todos.length ? 'Nada pendiente acá.' : 'No falta nada… por ahora.'}</p>`)) +
+    (nOcultos
+      ? `<p class="ayuda ocultos">${nOcultos} cosa${nOcultos === 1 ? '' : 's'} en secciones ocultas.
+           <button type="button" id="btn-mostrar-secciones">Mostrar todas</button></p>`
+      : '') +
     (listos.length
       ? `<div class="sub-lista"><h4>Ya en el carro (${listos.length})</h4>
            <button type="button" id="btn-vaciar">Vaciar</button></div>` +
@@ -659,6 +714,8 @@ function pintarFalta() {
       : '');
 
   conectarItems(cont, pintarFalta);
+  const mostrarTodo = $('#btn-mostrar-secciones');
+  if (mostrarTodo) mostrarTodo.onclick = () => { sec.mostrarTodas(); pintarFalta(); };
   const vaciar = $('#btn-vaciar');
   if (vaciar) vaciar.onclick = async () => {
     const n = await datos.limpiarListos('Falta');
@@ -711,6 +768,21 @@ function pintarAjustes() {
   $$('#seg-tema .seg').forEach(b =>
     b.classList.toggle('activo', b.dataset.tema === (localStorage.getItem('bl.tema') || 'dark')));
   pintarEstado();
+  pintarRecorrido();
+}
+
+function pintarRecorrido() {
+  const o = sec.orden();
+  const cont = $('#lista-recorrido');
+  cont.innerHTML = o.map((s, i) =>
+    `<div class="paso-recorrido"><span class="n">${i + 1}</span><span class="nombre">${esc(s)}</span>
+       <button type="button" data-s="${esc(s)}" data-paso="-1" aria-label="Subir ${esc(s)}"${i === 0 ? ' disabled' : ''}>↑</button>
+       <button type="button" data-s="${esc(s)}" data-paso="1" aria-label="Bajar ${esc(s)}"${i === o.length - 1 ? ' disabled' : ''}>↓</button>
+     </div>`).join('');
+  cont.querySelectorAll('button').forEach(b => b.onclick = () => {
+    sec.mover(b.dataset.s, Number(b.dataset.paso));
+    pintarRecorrido();
+  });
 }
 
 function pintarEstado() {

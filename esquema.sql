@@ -35,6 +35,7 @@ create table if not exists public.lista (
   tipo       text not null check (tipo in ('Falta','Deseo')),
   nombre     text not null,
   lugar      text,
+  seccion    text,           -- sección del súper elegida a mano (null = automática)
   precio     numeric,
   nota       text,
   listo      boolean not null default false,
@@ -43,6 +44,9 @@ create table if not exists public.lista (
 );
 
 create index if not exists lista_tipo_idx on public.lista (tipo, listo);
+
+-- Para bases creadas antes de las secciones del súper:
+alter table public.lista add column if not exists seccion text;
 
 -- Los presupuestos se identifican por su clasificación, no por el id: así dos
 -- teléfonos que todavía no sincronizan no terminan creando dos "Feria".

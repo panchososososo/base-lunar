@@ -26,6 +26,15 @@ const leer = (k, def) => {
 };
 const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
+// Si la tabla `lista` todavía no tiene la columna `seccion`, se deja de mandar.
+let SIN_COLUMNA_SECCION = false;
+const faltaSeccion = e => /seccion/i.test(e?.message || '');
+const sinSeccion = fila => {
+  if (!SIN_COLUMNA_SECCION || !fila || !('seccion' in fila)) return fila;
+  const { seccion, ...resto } = fila;
+  return resto;
+};
+
 export const datos = {
   sb: null,            // cliente supabase
   usuario: null,
@@ -124,15 +133,20 @@ export const datos = {
     for (const t of [...this.cola]) {
       let error = null;
       try {
+        const fila = t.tabla === 'lista' && t.fila ? sinSeccion(t.fila) : t.fila;
         if (t.op === 'insert') {
-          ({ error } = await this.sb.from(t.tabla).upsert(t.fila));
+          ({ error } = await this.sb.from(t.tabla).upsert(fila));
         } else if (t.op === 'update') {
-          ({ error } = await this.sb.from(t.tabla).update(t.fila).eq('id', t.fila.id));
+          ({ error } = await this.sb.from(t.tabla).update(fila).eq('id', fila.id));
         } else if (t.op === 'delete') {
           ({ error } = await this.sb.from(t.tabla).delete().eq('id', t.id));
         }
       } catch (e) { error = e; }
 
+      if (error && t.tabla === 'lista' && faltaSeccion(error) && !SIN_COLUMNA_SECCION) {
+        SIN_COLUMNA_SECCION = true;       // el próximo intento va sin `seccion`
+        break;
+      }
       if (error) {
         t.intentos = (t.intentos || 0) + 1;
         t.ultimoError = error.message || String(error);
@@ -312,10 +326,16 @@ export const datos = {
   async subirLista(op, fila) {
     if (!fila) return;
     if (this.enLinea) {
-      const q = op === 'insert'
-        ? this.sb.from('lista').insert(fila)
-        : this.sb.from('lista').update(fila).eq('id', fila.id);
-      const { error } = await q;
+      const enviar = f => (op === 'insert'
+        ? this.sb.from('lista').insert(f)
+        : this.sb.from('lista').update(f).eq('id', f.id));
+      let { error } = await enviar(sinSeccion(fila));
+      // Base sin la columna `seccion` (falta correr el esquema.sql nuevo):
+      // se sube igual sin ella; la corrección queda recordada en el teléfono.
+      if (error && faltaSeccion(error)) {
+        SIN_COLUMNA_SECCION = true;
+        ({ error } = await enviar(sinSeccion(fila)));
+      }
       if (error) this.encolar({ op, tabla: 'lista', fila });
     } else if (this.sb && this.usuario) {
       this.encolar({ op, tabla: 'lista', fila });

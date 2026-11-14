@@ -139,6 +139,29 @@ pendientes, y se actualiza en los dos teléfonos al mismo tiempo.
 Los deseos funcionan igual, con un precio aproximado opcional: arriba se ve
 cuánto suma todo lo que está en la mira.
 
+#### Secciones del súper
+
+*Falta comprar* se agrupa por sección, en el orden del recorrido de Líder:
+Frutas y verduras → Carnes → Lácteos y refrigerados → Despensa → Snacks y
+galletas → Licores → Hogar y desechables → Higiene personal → Juguetería y
+librería (lo que no se reconoce cae en **Otros**, al final).
+
+- La sección se pone sola según el nombre, entendiendo plurales y diminutivos
+  (*galletitas*, *sopitas*) y casos raros (*cevechita* va a Licores, *sufle de
+  papa* y *papitas* a Snacks).
+- Si se equivoca, se cambia tocando la sección bajo el nombre. La app lo
+  recuerda: la próxima vez que se anote lo mismo, va directo ahí.
+- Los botones de sección sobre la lista ocultan o muestran secciones enteras
+  sin borrar nada (por ejemplo, lo que se compra en otro lado).
+- Si se anota algo que ya está pendiente (*papitas* y *Papitas*, *vaso* y
+  *vasos*), avisa y pregunta si agregarlo igual.
+- **Ajustes → Recorrido del súper** cambia el orden de las secciones si se
+  cambian de supermercado.
+
+El orden, las secciones ocultas y lo aprendido viven en cada teléfono. La
+sección elegida a mano se guarda en la columna `seccion` de la tabla `lista`:
+en bases creadas antes, vuelve a correr `esquema.sql` (solo agrega la columna).
+
 ### Volver al Excel
 
 **Ajustes → Excel (.xlsx)** genera un archivo con las columnas
@@ -165,6 +188,7 @@ js/app.js               controlador y render
 js/datos.js             Supabase + caché local + cola offline
 js/graficos.js          gráficos en SVG/HTML, sin librerías
 js/parser.js            lee los movimientos escritos a mano
+js/secciones.js         secciones del súper: reglas, recorrido, ocultas
 js/excel.js             export .xlsx / .csv
 js/util.js              formato de plata, meses, categorías
 datos/historico.json    las 72 filas que venían en la planilla

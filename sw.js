@@ -1,9 +1,9 @@
 // ============ service worker: la app abre aunque no haya señal ============
-const VERSION = 'base-lunar-v7';
+const VERSION = 'base-lunar-v8';
 const SHELL = [
   './', './index.html', './config.js',
   './css/estilos.css',
-  './js/app.js', './js/datos.js', './js/graficos.js', './js/excel.js', './js/util.js', './js/parser.js', './js/csv.js',
+  './js/app.js', './js/datos.js', './js/graficos.js', './js/excel.js', './js/util.js', './js/parser.js', './js/csv.js', './js/secciones.js',
   './datos/historico.json',
   './manifest.webmanifest', './icono.svg', './icono-192.png', './icono-512.png',
 ];
