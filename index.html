@@ -185,6 +185,7 @@
   <div class="segmentado" id="seg-lista" role="group" aria-label="Tipo de lista">
     <button type="button" class="seg activo" data-lista="Falta">Falta comprar</button>
     <button type="button" class="seg" data-lista="Deseo">Se nos antoja</button>
+    <button type="button" class="seg" data-lista="Compras">Precios</button>
   </div>
 
   <div id="bloque-Falta">
@@ -212,6 +213,56 @@
       </div>
     </form>
     <div id="items-deseo"></div>
+  </div>
+
+  <div id="bloque-Compras" hidden>
+    <form class="tarjeta" id="form-compra" autocomplete="off">
+      <div class="fila-compra-cab">
+        <input type="date" id="c-fecha" aria-label="Fecha de la compra" required>
+        <div class="chips" id="chips-lugar-compra"></div>
+      </div>
+      <input type="text" id="c-producto" list="lista-productos" placeholder="Tomate, palta, frutilla…"
+             required aria-label="Producto">
+      <datalist id="lista-productos"></datalist>
+      <div class="fila-compra">
+        <label>Cantidad
+          <span class="con-unidad">
+            <input type="text" id="c-cant" inputmode="decimal" placeholder="1,5">
+            <span class="segmentado mini" id="seg-unidad" role="group" aria-label="Unidad">
+              <button type="button" class="seg activo" data-u="kg">kg</button>
+              <button type="button" class="seg" data-u="un">un</button>
+            </span>
+          </span>
+        </label>
+        <label><span id="c-precio-etq">$ por kg</span>
+          <input type="text" id="c-precio" inputmode="decimal" placeholder="2.2k"></label>
+        <label>Total pagado
+          <input type="text" id="c-total" inputmode="decimal" placeholder="5k"></label>
+      </div>
+      <p class="ayuda mini" id="c-previo">Llena dos de los tres datos y la app calcula el otro.</p>
+      <button class="primario" type="submit">Agregar a la compra</button>
+    </form>
+
+    <div id="compra-actual"></div>
+
+    <div class="chips filtros" id="filtros-lugar-compra"></div>
+
+    <div class="tarjeta">
+      <h3>Gasto por semana</h3>
+      <div id="gr-semanas"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h3>Precio de cada cosa</h3>
+      <p class="ayuda mini">Precio por kilo o por unidad de la última semana en que se compró,
+        comparado con la vez anterior. Toca un producto para ver su historia.</p>
+      <div id="lista-precios"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h3>Compras anteriores</h3>
+      <div id="lista-compras"></div>
+    </div>
   </div>
 </section>
 

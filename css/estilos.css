@@ -447,3 +447,69 @@ code {
   .aviso { animation: sube .18s ease-out; }
   @keyframes sube { from { opacity: 0; transform: translate(-50%, 8px); } }
 }
+
+/* ---------- compras: precio de cada cosa ---------- */
+.fila-compra-cab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fila-compra-cab input[type="date"] { width: auto; flex: 0 0 auto; }
+.fila-compra-cab .chips { margin-top: 0; }
+#form-compra > * + * { margin-top: 10px; }
+.fila-compra { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 8px; }
+.fila-compra label { font-size: 12px; color: var(--muted); min-width: 0; }
+.fila-compra input { min-width: 0; }
+.con-unidad { display: flex; gap: 4px; align-items: stretch; margin-top: 5px; }
+.con-unidad input { margin-top: 0; flex: 1 1 0; }
+.segmentado.mini { display: flex; padding: 2px; margin: 0; flex: none; }
+.segmentado.mini .seg { padding: 4px 7px; font-size: 12px; }
+#c-previo b { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+#c-previo .nota { color: var(--muted); }
+.total-compra { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
+#compra-actual { margin-bottom: 12px; }
+#compra-actual .sub-lista { margin-top: 4px; }
+
+.semanas { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; align-items: end; height: 150px; }
+.semana { display: flex; flex-direction: column; align-items: center; height: 100%; min-width: 0; }
+.semana .valor { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; height: 14px; white-space: nowrap; }
+.semana .pista { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.semana .barra { width: 70%; max-width: 26px; background: var(--series-1); border-radius: 5px 5px 2px 2px; opacity: .55; }
+.semana.actual .barra { opacity: 1; }
+.semana.actual .valor { color: var(--text-primary); font-weight: 600; }
+.semana .etq { font-size: 10px; color: var(--muted); margin-top: 5px; white-space: nowrap; }
+.pie-semanas { margin-top: 10px; }
+.pie-semanas b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+details.producto { border-bottom: 1px solid var(--borde); }
+details.producto:last-child { border-bottom: 0; }
+details.producto summary {
+  display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; list-style: none;
+}
+details.producto summary::-webkit-details-marker { display: none; }
+details.producto .nombre { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chispa { width: 64px; height: 22px; flex: none; }
+.precio-actual { font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.precio-actual small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.var { font-size: 11.5px; font-variant-numeric: tabular-nums; width: 56px; text-align: right; flex: none; white-space: nowrap; }
+.var.sube  { color: var(--mal); }
+.var.baja  { color: var(--bien); }
+.var.igual, .var.nueva { color: var(--muted); }
+.historia-precio { width: 100%; border-collapse: collapse; font-size: 13px; margin: 0 0 10px; }
+.historia-precio th { text-align: left; font-weight: 500; color: var(--muted); font-size: 11.5px; padding: 4px 0; }
+.historia-precio td { padding: 4px 0; font-variant-numeric: tabular-nums; }
+.historia-precio th:last-child, .historia-precio td:last-child { text-align: right; }
+
+details.compra { border-bottom: 1px solid var(--borde); }
+details.compra:last-child { border-bottom: 0; }
+details.compra summary {
+  display: flex; align-items: baseline; gap: 10px; padding: 11px 0; cursor: pointer; list-style: none; font-size: 14px;
+}
+details.compra summary::-webkit-details-marker { display: none; }
+details.compra summary span { flex: 1; }
+details.compra summary small { color: var(--muted); font-size: 12px; }
+details.compra summary b { font-variant-numeric: tabular-nums; }
+details.compra[open] { padding-bottom: 6px; }
+
+@media (max-width: 380px) {
+  .fila-compra { grid-template-columns: 1fr 1fr; }
+  .fila-compra label:first-child { grid-column: 1 / -1; }
+}
+#seg-lista .seg { white-space: nowrap; padding-left: 4px; padding-right: 4px; }
+@media (max-width: 380px) { #seg-lista .seg { font-size: 12.5px; } }

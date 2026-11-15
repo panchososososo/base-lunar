@@ -57,6 +57,27 @@ delete from public.presupuestos a
 create unique index if not exists presupuestos_clasificacion_idx
   on public.presupuestos (clasificacion);
 
+-- ---------- compras: precio de cada cosa ----------
+-- Cada fila es un producto. Las filas con la misma `compra` (misma fecha y
+-- lugar) son una compra, y la app la registra como un gasto en movimientos
+-- con ese mismo id.
+create table if not exists public.compras (
+  id         uuid primary key default gen_random_uuid(),
+  compra     uuid        not null,
+  fecha      date        not null,
+  lugar      text        not null,
+  producto   text        not null,
+  cantidad   numeric,                          -- kilos o unidades
+  unidad     text        not null default 'kg' check (unidad in ('kg','un')),
+  precio     numeric,                          -- por kilo o por unidad
+  total      numeric     not null,             -- lo que se pagó
+  creado_por text,
+  creado_en  timestamptz not null default now()
+);
+
+create index if not exists compras_fecha_idx  on public.compras (fecha desc);
+create index if not exists compras_compra_idx on public.compras (compra);
+
 -- ---------- gastos fijos del mes ----------
 create table if not exists public.fijos (
   id         uuid primary key default gen_random_uuid(),
@@ -75,6 +96,7 @@ alter table public.movimientos  enable row level security;
 alter table public.presupuestos enable row level security;
 alter table public.lista        enable row level security;
 alter table public.fijos        enable row level security;
+alter table public.compras      enable row level security;
 
 drop policy if exists "casa_lee_mov"     on public.movimientos;
 drop policy if exists "casa_escribe_mov" on public.movimientos;
@@ -116,6 +138,16 @@ create policy "casa_escribe_fijos" on public.fijos for insert to authenticated w
 create policy "casa_edita_fijos"   on public.fijos for update to authenticated using (true) with check (true);
 create policy "casa_borra_fijos"   on public.fijos for delete to authenticated using (true);
 
+drop policy if exists "casa_lee_compras"     on public.compras;
+drop policy if exists "casa_escribe_compras" on public.compras;
+drop policy if exists "casa_edita_compras"   on public.compras;
+drop policy if exists "casa_borra_compras"   on public.compras;
+
+create policy "casa_lee_compras"     on public.compras for select to authenticated using (true);
+create policy "casa_escribe_compras" on public.compras for insert to authenticated with check (true);
+create policy "casa_edita_compras"   on public.compras for update to authenticated using (true) with check (true);
+create policy "casa_borra_compras"   on public.compras for delete to authenticated using (true);
+
 -- ---------- sincronización en vivo entre los dos teléfonos ----------
 -- Envuelto para que se pueda volver a correr el archivo completo sin que
 -- reclame que la tabla ya estaba publicada.
@@ -129,6 +161,10 @@ exception when others then null; end $$;
 
 do $$ begin
   alter publication supabase_realtime add table public.fijos;
+exception when others then null; end $$;
+
+do $$ begin
+  alter publication supabase_realtime add table public.compras;
 exception when others then null; end $$;
 
 -- ---------- presupuestos iniciales (los de la planilla) ----------
