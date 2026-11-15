@@ -5,6 +5,7 @@ const K_MOV   = 'bl.movimientos';
 const K_PPTO  = 'bl.presupuestos';
 const K_LISTA = 'bl.lista';
 const K_FIJOS = 'bl.fijos';
+const K_COMPRAS = 'bl.compras';
 const K_COLA  = 'bl.cola';
 const K_LOCAL = 'bl.modoLocal';
 
@@ -43,6 +44,7 @@ export const datos = {
   presupuestos: leer(K_PPTO, PPTO_INICIAL),
   lista: leer(K_LISTA, []),
   fijos: leer(K_FIJOS, []),
+  compras: leer(K_COMPRAS, []),
   cola: leer(K_COLA, []),
   alCambiar: () => {},
   alEstado: () => {},
@@ -90,11 +92,12 @@ export const datos = {
   async sincronizar() {
     if (!this.sb || !this.usuario) return;
     await this.vaciarCola();
-    const [mov, ppto, lista, fijos] = await Promise.all([
+    const [mov, ppto, lista, fijos, compras] = await Promise.all([
       this.sb.from('movimientos').select('*').order('fecha', { ascending: false }),
       this.sb.from('presupuestos').select('*').order('clasificacion'),
       this.sb.from('lista').select('*').order('creado_en', { ascending: true }),
       this.sb.from('fijos').select('*').order('dia'),
+      this.sb.from('compras').select('*').order('creado_en', { ascending: true }),
     ]);
     if (mov.error) throw mov.error;
     this.movimientos = mov.data.map(normalizar);
@@ -111,6 +114,10 @@ export const datos = {
       this.fijos = fijos.data.map(f => ({ ...f, monto: f.monto == null ? null : Number(f.monto) }));
       guardar(K_FIJOS, this.fijos);
     }
+    if (!compras.error) {   // si la tabla aún no existe, se sigue con la copia local
+      this.compras = compras.data.map(normalizarCompra);
+      guardar(K_COMPRAS, this.compras);
+    }
     this.alCambiar();
     this.alEstado();
   },
@@ -121,6 +128,7 @@ export const datos = {
     this.sb.channel('bl-cambios')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'movimientos' }, refrescar)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lista' }, refrescar)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'compras' }, refrescar)
       .subscribe();
   },
 
@@ -342,6 +350,75 @@ export const datos = {
     }
   },
 
+  // ---------- compras: precio de cada cosa ----------
+  /** Agrega un producto a la compra de esa fecha y lugar, y actualiza su gasto. */
+  async agregarCompra({ fecha, lugar, producto, cantidad, unidad, precio, total }) {
+    const misma = this.compras.find(c => c.fecha === fecha && c.lugar === lugar);
+    const fila = {
+      id: uid(), compra: misma ? misma.compra : uid(), fecha, lugar, producto,
+      cantidad, unidad, precio, total,
+      creado_por: this.usuario?.email ?? null,
+      creado_en: new Date().toISOString(),
+    };
+    this.compras = [...this.compras, fila];
+    guardar(K_COMPRAS, this.compras);
+    this.alCambiar();
+    await this.subirTabla('compras', 'insert', fila);
+    await this.cuadrarGasto(fila.compra);
+    return fila;
+  },
+
+  async borrarCompra(id) {
+    const fila = this.compras.find(c => c.id === id);
+    if (!fila) return;
+    this.compras = this.compras.filter(c => c.id !== id);
+    guardar(K_COMPRAS, this.compras);
+    this.alCambiar();
+    await this.subirTabla('compras', 'delete', fila);
+    await this.cuadrarGasto(fila.compra);
+  },
+
+  async restaurarCompra(fila) {
+    this.compras = [...this.compras.filter(c => c.id !== fila.id), fila]
+      .sort((a, b) => String(a.creado_en).localeCompare(String(b.creado_en)));
+    guardar(K_COMPRAS, this.compras);
+    this.alCambiar();
+    await this.subirTabla('compras', 'insert', fila);
+    await this.cuadrarGasto(fila.compra);
+  },
+
+  /** El gasto de una compra es un movimiento con el mismo id y la suma de sus productos. */
+  async cuadrarGasto(compra) {
+    const items = this.compras.filter(c => c.compra === compra);
+    const mov = this.movimientos.find(m => m.id === compra);
+    if (!items.length) { if (mov) await this.borrar(compra); return; }
+    const monto = items.reduce((s, c) => s + (Number(c.total) || 0), 0);
+    const { fecha, lugar } = items[0];
+    if (mov) {
+      if (mov.monto !== monto || mov.fecha !== fecha) await this.editar({ ...mov, monto, fecha });
+    } else {
+      await this.agregar({
+        id: compra, fecha, tipo: 'Egreso', categoria: 'Gastos',
+        concepto: lugar, presupuesto: null, monto,
+      });
+    }
+  },
+
+  async subirTabla(tabla, op, fila) {
+    const t = op === 'delete' ? { op, tabla, id: fila.id } : { op, tabla, fila };
+    if (this.enLinea) {
+      let error;
+      try {
+        ({ error } = op === 'insert' ? await this.sb.from(tabla).upsert(fila)
+          : op === 'update' ? await this.sb.from(tabla).update(fila).eq('id', fila.id)
+          : await this.sb.from(tabla).delete().eq('id', fila.id));
+      } catch (e) { error = e; }
+      if (error) this.encolar(t);
+    } else if (this.sb && this.usuario) {
+      this.encolar(t);
+    }
+  },
+
   // ---------- gastos fijos ----------
   async guardarFijo(fila) {
     const f = { ...fila, id: fila.id || uid() };
@@ -376,6 +453,11 @@ export const datos = {
 const clave = f => `${f.fecha}|${f.tipo}|${f.concepto}|${f.monto}`;
 const sinMeta = ({ id, fecha, tipo, categoria, concepto, presupuesto, monto, creado_por }) =>
   ({ id, fecha, tipo, categoria, concepto, presupuesto, monto, creado_por });
+
+function normalizarCompra(f) {
+  const n = v => (v == null ? null : Number(v));
+  return { ...f, cantidad: n(f.cantidad), precio: n(f.precio), total: Number(f.total) };
+}
 
 function normalizar(f) {
   return {

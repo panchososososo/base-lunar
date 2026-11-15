@@ -162,6 +162,25 @@ El orden, las secciones ocultas y lo aprendido viven en cada teléfono. La
 sección elegida a mano se guarda en la columna `seccion` de la tabla `lista`:
 en bases creadas antes, vuelve a correr `esquema.sql` (solo agrega la columna).
 
+### Precios (lo que costó cada cosa)
+
+**Lista → Precios** sirve para anotar la feria o el súper producto por
+producto y comparar semana a semana.
+
+- Se elige la fecha y el lugar, y por cada producto se llenan **dos de tres**
+  datos: cantidad (kg o unidades), precio por kg/unidad y total pagado. La app
+  calcula el que falta y muestra cómo quedó antes de agregarlo.
+  Ej.: *tomate, $2.2k por kg, total 5k* → 2,27 kg.
+- La plata acepta `5k`, `2.2k`, `$1.500` o `1,5`; menos de 100 se entiende
+  como miles.
+- Todo lo de la misma fecha y lugar es **una compra**, y se registra sola
+  como un gasto (categoría *Gastos*, concepto = el lugar) que se actualiza al
+  agregar o quitar productos. No hay que anotarlo aparte en *Registrar*.
+- Abajo: **gasto por semana** (lunes a domingo, últimas 8), **precio de cada
+  cosa** con su variación respecto a la semana anterior (▲ más caro, ▼ más
+  barato) y su historia, y las **compras anteriores** con su detalle. Se puede
+  filtrar por lugar.
+
 ### Volver al Excel
 
 **Ajustes → Excel (.xlsx)** genera un archivo con las columnas
@@ -189,6 +208,7 @@ js/datos.js             Supabase + caché local + cola offline
 js/graficos.js          gráficos en SVG/HTML, sin librerías
 js/parser.js            lee los movimientos escritos a mano
 js/secciones.js         secciones del súper: reglas, recorrido, ocultas
+js/compras.js           precios por producto, gasto semanal
 js/excel.js             export .xlsx / .csv
 js/util.js              formato de plata, meses, categorías
 datos/historico.json    las 72 filas que venían en la planilla

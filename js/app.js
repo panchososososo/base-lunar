@@ -5,6 +5,7 @@ import { exportarXlsx, exportarCsv } from './excel.js';
 import { parsear, categoriaDe } from './parser.js';
 import { leerTexto, parsearCsv } from './csv.js';
 import * as sec from './secciones.js';
+import * as cmp from './compras.js';
 import {
   CATEGORIAS, clp, diaDelMes, esc, fechaCorta, hoyISO, mesHoy, mesKey, mesLargo,
   mesOrden, aNumero, uid,
@@ -23,6 +24,9 @@ const estado = {
   lista: 'Falta',
   lugarNuevo: LUGARES[0],
   filtroLugar: 'Todo',
+  compraLugar: 'Feria',
+  compraUnidad: 'kg',
+  filtroCompras: 'Todo',
   modoRegistro: 'uno',
   csv: [],
   previo: [],
@@ -189,6 +193,42 @@ function cablear() {
     }
     await agregar();
   };
+  // --- compras: precio de cada cosa ---
+  $('#c-fecha').value = hoyISO();
+  $('#c-fecha').onchange = pintarCompras;
+  $$('#seg-unidad .seg').forEach(b => b.onclick = () => {
+    estado.compraUnidad = b.dataset.u;
+    pintarUnidad();
+    previoCompra();
+  });
+  ['#c-cant', '#c-precio', '#c-total'].forEach(id => { $(id).oninput = previoCompra; });
+  $('#c-producto').onchange = () => {
+    // si ya se compró antes, sugerir la misma unidad
+    const k = sec.clave($('#c-producto').value);
+    const previo = [...datos.compras].reverse().find(c => sec.clave(c.producto) === k);
+    if (previo && previo.unidad !== estado.compraUnidad) {
+      estado.compraUnidad = previo.unidad; pintarUnidad(); previoCompra();
+    }
+  };
+  $('#form-compra').onsubmit = async ev => {
+    ev.preventDefault();
+    const producto = $('#c-producto').value.trim();
+    const r = leerCompra();
+    if (!producto) return;
+    if (r.total == null) {
+      aviso('Falta el total: anota lo que pagaste, o la cantidad y el precio.');
+      return;
+    }
+    await datos.agregarCompra({
+      fecha: $('#c-fecha').value || hoyISO(), lugar: estado.compraLugar, producto,
+      cantidad: r.cant, unidad: estado.compraUnidad, precio: r.precio, total: r.total,
+    });
+    ['#c-producto', '#c-cant', '#c-precio', '#c-total'].forEach(id => { $(id).value = ''; });
+    previoCompra();
+    $('#c-producto').focus();
+    pintarCompras();
+  };
+
   $('#form-deseo').onsubmit = async ev => {
     ev.preventDefault();
     const nombre = $('#d-nombre').value.trim();
@@ -585,13 +625,149 @@ function pintarPresupuestos() {
      <span style="width:40px"></span></div>`);
 }
 
+/* ================== compras: precio de cada cosa ================== */
+
+function leerCompra() {
+  return cmp.resolver({
+    cant: cmp.cantidad($('#c-cant').value),
+    precio: cmp.plata($('#c-precio').value),
+    total: cmp.plata($('#c-total').value),
+  });
+}
+
+function pintarUnidad() {
+  $$('#seg-unidad .seg').forEach(b => b.classList.toggle('activo', b.dataset.u === estado.compraUnidad));
+  $('#c-precio-etq').textContent = estado.compraUnidad === 'kg' ? '$ por kg' : '$ por unidad';
+}
+
+function previoCompra() {
+  const r = leerCompra();
+  const u = estado.compraUnidad;
+  const el = $('#c-previo');
+  if (r.total == null && r.cant == null && r.precio == null) {
+    el.textContent = 'Llena dos de los tres datos y la app calcula el otro.';
+  } else if (r.total == null) {
+    el.textContent = 'Falta un dato: el total, o la cantidad y el precio.';
+  } else {
+    el.innerHTML = `Queda: <b>${r.cant != null ? cmp.fmtCant(r.cant, u) : 'sin cantidad'}</b>` +
+      (r.precio != null ? ` a <b>${clp(r.precio)}${cmp.porUnidad(u)}</b>` : '') +
+      ` · total <b>${clp(r.total)}</b>` +
+      (r.precio == null ? ' <span class="nota">(sin precio por kilo no entra en la comparación)</span>' : '');
+  }
+}
+
+function pintarCompras() {
+  pintarUnidad();
+  // lugares: los de siempre + los que ya se usaron
+  const lugares = [...new Set(['Feria', ...LUGARES, ...datos.compras.map(c => c.lugar)])];
+  $('#chips-lugar-compra').innerHTML = lugares.map(l =>
+    `<button type="button" class="chip${l === estado.compraLugar ? ' activo' : ''}" data-l="${esc(l)}">${esc(l)}</button>`).join('');
+  $('#chips-lugar-compra').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    estado.compraLugar = b.dataset.l;
+    pintarCompras();
+  });
+
+  // sugerencias de productos ya comprados
+  const nombres = new Map();
+  for (const c of datos.compras) nombres.set(sec.clave(c.producto), c.producto);
+  $('#lista-productos').innerHTML = [...nombres.values()].sort()
+    .map(n => `<option value="${esc(n)}">`).join('');
+
+  // la compra que se está anotando (misma fecha y lugar)
+  const fecha = $('#c-fecha').value || hoyISO();
+  const actual = cmp.agruparCompras(datos.compras.filter(c => c.fecha === fecha && c.lugar === estado.compraLugar))[0];
+  const cont = $('#compra-actual');
+  cont.innerHTML = actual
+    ? `<div class="sub-lista"><h4>${esc(actual.lugar)} · ${fechaCorta(actual.fecha)}</h4>
+         <span class="total-compra">${clp(actual.total)}</span></div>` +
+      actual.items.map(itemCompraHTML).join('') +
+      `<p class="ayuda mini">Registrado como gasto «${esc(actual.lugar)}» en el historial; se actualiza solo.</p>`
+    : '';
+  conectarCompras(cont);
+
+  // filtro por lugar para comparar
+  const usados = [...new Set(datos.compras.map(c => c.lugar))];
+  if (!['Todo', ...usados].includes(estado.filtroCompras)) estado.filtroCompras = 'Todo';
+  $('#filtros-lugar-compra').innerHTML = usados.length > 1
+    ? ['Todo', ...usados].map(l =>
+        `<button type="button" class="chip${l === estado.filtroCompras ? ' activo' : ''}" data-f="${esc(l)}">${esc(l)}</button>`).join('')
+    : '';
+  $('#filtros-lugar-compra').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    estado.filtroCompras = b.dataset.f;
+    pintarCompras();
+  });
+  const filas = estado.filtroCompras === 'Todo'
+    ? datos.compras : datos.compras.filter(c => c.lugar === estado.filtroCompras);
+
+  // gasto por semana (+ presupuesto semanal si se mira la feria)
+  const semanas = cmp.gastoSemanal(filas, hoyISO());
+  const pptoFeria = estado.filtroCompras === 'Feria'
+    ? datos.presupuestos.find(p => p.clasificacion === 'Feria') : null;
+  const conDatos = semanas.filter(s => s.total > 0);
+  const promedio = conDatos.length ? conDatos.reduce((t, s) => t + s.total, 0) / conDatos.length : 0;
+  $('#gr-semanas').innerHTML = cmp.barrasSemanas(semanas) +
+    (conDatos.length
+      ? `<p class="ayuda mini pie-semanas">Promedio de las semanas con compras: <b>${clp(promedio)}</b>` +
+        (pptoFeria ? ` · presupuesto de feria ≈ <b>${clp(pptoFeria.monto / 4)}</b> por semana` : '') + '</p>'
+      : '');
+
+  // precio de cada cosa
+  const productos = cmp.preciosPorProducto(filas);
+  $('#lista-precios').innerHTML = productos.length
+    ? productos.map(cmp.filaProducto).join('')
+    : '<p class="vacio">Anota cantidad y precio de lo que compres para comparar semana a semana.</p>';
+
+  // compras anteriores
+  const compras = cmp.agruparCompras(filas);
+  const lc = $('#lista-compras');
+  lc.innerHTML = compras.length
+    ? compras.map(c => `<details class="compra">
+        <summary><span>${esc(c.lugar)} · ${fechaCorta(c.fecha)}</span>
+          <small>${c.items.length} producto${c.items.length === 1 ? '' : 's'}</small>
+          <b>${clp(c.total)}</b></summary>
+        ${c.items.map(itemCompraHTML).join('')}
+      </details>`).join('')
+    : '<p class="vacio">Todavía no hay compras anotadas.</p>';
+  conectarCompras(lc);
+}
+
+function itemCompraHTML(c) {
+  const detalle = [
+    c.cantidad != null ? cmp.fmtCant(c.cantidad, c.unidad) : null,
+    c.precio != null ? `${clp(c.precio)}${cmp.porUnidad(c.unidad)}` : null,
+  ].filter(Boolean).join(' · ');
+  return `<div class="item compra-item" data-id="${c.id}">
+    <div class="cuerpo"><strong>${esc(c.producto)}</strong>${detalle ? `<small>${detalle}</small>` : ''}</div>
+    <span class="precio">${clp(c.total)}</span>
+    <button class="quitar" data-op="quitar" aria-label="Quitar ${esc(c.producto)}">${ICONO_QUITA}</button>
+  </div>`;
+}
+
+function conectarCompras(cont) {
+  cont.querySelectorAll('.compra-item').forEach(el => {
+    el.querySelector('[data-op="quitar"]').onclick = async () => {
+      const copia = datos.compras.find(c => c.id === el.dataset.id);
+      if (!copia) return;
+      await datos.borrarCompra(copia.id);
+      pintarCompras();
+      aviso(`Quitado: ${copia.producto}`, {
+        accion: 'Deshacer',
+        alPulsar: async () => { await datos.restaurarCompra(copia); pintarCompras(); },
+      });
+    };
+  });
+}
+
 /* ================== listas ================== */
 
 function pintarLista() {
   $$('#seg-lista .seg').forEach(b => b.classList.toggle('activo', b.dataset.lista === estado.lista));
   $('#bloque-Falta').hidden = estado.lista !== 'Falta';
   $('#bloque-Deseo').hidden = estado.lista !== 'Deseo';
-  if (estado.lista === 'Falta') pintarFalta(); else pintarDeseos();
+  $('#bloque-Compras').hidden = estado.lista !== 'Compras';
+  if (estado.lista === 'Falta') pintarFalta();
+  else if (estado.lista === 'Deseo') pintarDeseos();
+  else pintarCompras();
   pintarGlobo();
 }
 
