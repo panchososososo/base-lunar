@@ -164,13 +164,20 @@ en bases creadas antes, vuelve a correr `esquema.sql` (solo agrega la columna).
 
 ### Precios (lo que costó cada cosa)
 
-**Lista → Precios** sirve para anotar la feria o el súper producto por
-producto y comparar semana a semana.
+El precio se anota **al marcar** algo en *Falta comprar*: en vez de pasar
+directo al carro, se abre ahí mismo un mini formulario.
 
-- Se elige la fecha y el lugar, y por cada producto se llenan **dos de tres**
-  datos: cantidad (kg o unidades), precio por kg/unidad y total pagado. La app
-  calcula el que falta y muestra cómo quedó antes de agregarlo.
+- Se llenan **dos de tres** datos: cantidad (kg o unidades), precio por
+  kg/unidad y total pagado. La app calcula el que falta y muestra cómo quedó.
   Ej.: *tomate, $2.2k por kg, total 5k* → 2,27 kg.
+- La unidad viene sugerida (la de la última vez, o kg para frutas, verduras y
+  carnes) y se muestra el precio de la última compra para comparar en el acto.
+- **Sin precio** lo marca como antes; **Cancelar** lo deja pendiente.
+- Lo comprado queda en *Ya en el carro* con lo que se pagó. Desmarcarlo borra
+  ese precio. *Vaciar* el carro **no** borra los precios: quedan en el historial.
+- Se registra con la fecha de hoy y el lugar del ítem (Feria, Súper…).
+- Lo que no estaba en la lista se anota en **Lista → Precios → Anotar algo que
+  no estaba en la lista**, eligiendo fecha y lugar.
 - La plata acepta `5k`, `2.2k`, `$1.500` o `1,5`; menos de 100 se entiende
   como miles.
 - Todo lo de la misma fecha y lugar es **una compra**, y se registra sola

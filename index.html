@@ -216,7 +216,11 @@
   </div>
 
   <div id="bloque-Compras" hidden>
-    <form class="tarjeta" id="form-compra" autocomplete="off">
+    <p class="ayuda mini intro-precios">Los precios se anotan al marcar algo en
+      <em>Falta comprar</em>. Acá se comparan semana a semana.</p>
+    <details class="tarjeta otra-compra">
+    <summary>Anotar algo que no estaba en la lista</summary>
+    <form id="form-compra" autocomplete="off">
       <div class="fila-compra-cab">
         <input type="date" id="c-fecha" aria-label="Fecha de la compra" required>
         <div class="chips" id="chips-lugar-compra"></div>
@@ -242,6 +246,7 @@
       <p class="ayuda mini" id="c-previo">Llena dos de los tres datos y la app calcula el otro.</p>
       <button class="primario" type="submit">Agregar a la compra</button>
     </form>
+    </details>
 
     <div id="compra-actual"></div>
 

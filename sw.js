@@ -1,5 +1,5 @@
 // ============ service worker: la app abre aunque no haya señal ============
-const VERSION = 'base-lunar-v9';
+const VERSION = 'base-lunar-v10';
 const SHELL = [
   './', './index.html', './config.js',
   './css/estilos.css',
