@@ -352,10 +352,10 @@ export const datos = {
 
   // ---------- compras: precio de cada cosa ----------
   /** Agrega un producto a la compra de esa fecha y lugar, y actualiza su gasto. */
-  async agregarCompra({ fecha, lugar, producto, cantidad, unidad, precio, total }) {
+  async agregarCompra({ id, fecha, lugar, producto, cantidad, unidad, precio, total }) {
     const misma = this.compras.find(c => c.fecha === fecha && c.lugar === lugar);
     const fila = {
-      id: uid(), compra: misma ? misma.compra : uid(), fecha, lugar, producto,
+      id: id || uid(), compra: misma ? misma.compra : uid(), fecha, lugar, producto,
       cantidad, unidad, precio, total,
       creado_por: this.usuario?.email ?? null,
       creado_en: new Date().toISOString(),

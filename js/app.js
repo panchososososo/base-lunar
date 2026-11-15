@@ -27,6 +27,7 @@ const estado = {
   compraLugar: 'Feria',
   compraUnidad: 'kg',
   filtroCompras: 'Todo',
+  pago: null,          // ítem de "Falta comprar" al que se le está anotando el precio
   modoRegistro: 'uno',
   csv: [],
   previo: [],
@@ -732,10 +733,7 @@ function pintarCompras() {
 }
 
 function itemCompraHTML(c) {
-  const detalle = [
-    c.cantidad != null ? cmp.fmtCant(c.cantidad, c.unidad) : null,
-    c.precio != null ? `${clp(c.precio)}${cmp.porUnidad(c.unidad)}` : null,
-  ].filter(Boolean).join(' · ');
+  const detalle = detalleCompra(c) === 'pagado' ? '' : detalleCompra(c);
   return `<div class="item compra-item" data-id="${c.id}">
     <div class="cuerpo"><strong>${esc(c.producto)}</strong>${detalle ? `<small>${detalle}</small>` : ''}</div>
     <span class="precio">${clp(c.total)}</span>
@@ -778,13 +776,124 @@ function itemHTML(i, { precio = false } = {}) {
   const bajo = precio
     ? (i.nota ? `<small>${esc(i.nota)}</small>` : '')
     : `<small>${i.lugar ? `${esc(i.lugar)} · ` : ''}${selectorSeccion(i)}</small>`;
-  return `<div class="item${i.listo ? ' listo' : ''}" data-id="${i.id}">
+  // lo que se pagó, si ya está en el carro con precio
+  const pagado = !precio && i.listo ? datos.compras.find(c => c.id === i.id) : null;
+  const abierto = estado.pago?.id === i.id;
+  return `<div class="item${i.listo ? ' listo' : ''}${abierto ? ' pagando' : ''}" data-id="${i.id}">
     <button class="tic" data-op="tic" aria-label="${i.listo ? 'Desmarcar' : 'Marcar'}"
             aria-pressed="${i.listo}">${ICONO_TIC}</button>
-    <div class="cuerpo"><strong>${esc(i.nombre)}</strong>${bajo}</div>
-    ${extra}
+    <div class="cuerpo"><strong>${esc(i.nombre)}</strong>${
+      pagado ? `<small>${esc(detalleCompra(pagado))}</small>` : bajo}</div>
+    ${pagado ? `<span class="precio">${clp(pagado.total)}</span>` : extra}
     <button class="quitar" data-op="quitar" aria-label="Quitar">${ICONO_QUITA}</button>
-  </div>`;
+  </div>${abierto ? pagoHTML(i) : ''}`;
+}
+
+/* ---------- precio al marcar un ítem de "Falta comprar" ---------- */
+
+/** Unidad sugerida: la de la última compra del mismo producto o, si no hay, según la sección. */
+function unidadSugerida(item) {
+  const k = sec.clave(item.nombre);
+  const previa = [...datos.compras].reverse().find(c => sec.clave(c.producto) === k);
+  if (previa) return previa.unidad;
+  return ['Frutas y verduras', 'Carnes'].includes(sec.seccionDeItem(item)) ? 'kg' : 'un';
+}
+
+function abrirPago(item) {
+  estado.pago = { id: item.id, unidad: unidadSugerida(item), cant: '', precio: '', total: '' };
+}
+
+function leerPago() {
+  const p = estado.pago;
+  return cmp.resolver({ cant: cmp.cantidad(p.cant), precio: cmp.plata(p.precio), total: cmp.plata(p.total) });
+}
+
+function textoPrevioPago() {
+  const r = leerPago();
+  const u = estado.pago.unidad;
+  if (r.total == null && r.cant == null && r.precio == null) return 'Llena dos de los tres datos, o márcalo sin precio.';
+  if (r.total == null) return 'Falta un dato: el total, o la cantidad y el precio.';
+  return `Queda: <b>${r.cant != null ? cmp.fmtCant(r.cant, u) : 'sin cantidad'}</b>` +
+    (r.precio != null ? ` a <b>${clp(r.precio)}${cmp.porUnidad(u)}</b>` : '') +
+    ` · total <b>${clp(r.total)}</b>`;
+}
+
+function pagoHTML(item) {
+  const p = estado.pago;
+  const k = sec.clave(item.nombre);
+  const ultima = [...datos.compras].reverse().find(c => sec.clave(c.producto) === k && c.precio != null);
+  const val = v => esc(v ?? '');
+  return `<form class="pago" data-id="${item.id}" autocomplete="off">
+    <div class="fila-compra">
+      <label>Cantidad
+        <span class="con-unidad">
+          <input type="text" name="cant" inputmode="decimal" placeholder="1,5" value="${val(p.cant)}">
+          <span class="segmentado mini" role="group" aria-label="Unidad">
+            <button type="button" class="seg${p.unidad === 'kg' ? ' activo' : ''}" data-u="kg">kg</button>
+            <button type="button" class="seg${p.unidad === 'un' ? ' activo' : ''}" data-u="un">un</button>
+          </span>
+        </span>
+      </label>
+      <label>${p.unidad === 'kg' ? '$ por kg' : '$ por unidad'}
+        <input type="text" name="precio" inputmode="decimal" placeholder="2.2k" value="${val(p.precio)}"></label>
+      <label>Total pagado
+        <input type="text" name="total" inputmode="decimal" placeholder="5k" value="${val(p.total)}"></label>
+    </div>
+    <p class="ayuda mini previo-pago">${textoPrevioPago()}</p>
+    ${ultima ? `<p class="ayuda mini ultima-vez">Última vez: ${clp(ultima.precio)}${cmp.porUnidad(ultima.unidad)}
+      en ${esc(ultima.lugar)}, ${fechaCorta(ultima.fecha)}</p>` : ''}
+    <div class="acciones-pago">
+      <button type="button" class="secundario chico" data-op="cancelar">Cancelar</button>
+      <button type="button" class="secundario chico" data-op="sin-precio">Sin precio</button>
+      <button type="submit" class="primario chico">Guardar</button>
+    </div>
+  </form>`;
+}
+
+function conectarPago(cont, despues) {
+  const f = cont.querySelector('form.pago');
+  if (!f) return;
+  const it = datos.lista.find(x => x.id === f.dataset.id);
+  if (!it) { estado.pago = null; return; }
+  ['cant', 'precio', 'total'].forEach(n => {
+    f.elements[n].oninput = () => {
+      estado.pago[n] = f.elements[n].value;      // sobrevive si la lista se repinta
+      f.querySelector('.previo-pago').innerHTML = textoPrevioPago();
+    };
+  });
+  f.querySelectorAll('[data-u]').forEach(b => b.onclick = () => {
+    estado.pago.unidad = b.dataset.u;
+    despues();
+    cont.querySelector('form.pago [name="cant"]')?.focus();
+  });
+  f.querySelector('[data-op="cancelar"]').onclick = () => { estado.pago = null; despues(); };
+  f.querySelector('[data-op="sin-precio"]').onclick = async () => {
+    estado.pago = null;
+    await datos.editarItem({ id: it.id, listo: true });
+    despues();
+  };
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const r = leerPago();
+    if (r.total == null) { aviso('Falta un dato: el total, o la cantidad y el precio.'); return; }
+    const unidad = estado.pago.unidad;
+    estado.pago = null;
+    await datos.editarItem({ id: it.id, listo: true });
+    await datos.agregarCompra({
+      id: it.id, fecha: hoyISO(), lugar: it.lugar || 'Otro', producto: it.nombre,
+      cantidad: r.cant, unidad, precio: r.precio, total: r.total,
+    });
+    despues();
+    aviso(`${it.nombre}: ${clp(r.total)} anotado en ${it.lugar || 'Otro'}.`);
+  };
+  if (!f.contains(document.activeElement)) f.elements.cant.focus({ preventScroll: true });
+}
+
+function detalleCompra(c) {
+  return [
+    c.cantidad != null ? cmp.fmtCant(c.cantidad, c.unidad) : null,
+    c.precio != null ? `${clp(c.precio)}${cmp.porUnidad(c.unidad)}` : null,
+  ].filter(Boolean).join(' · ') || 'pagado';
 }
 
 function selectorSeccion(i) {
@@ -799,6 +908,15 @@ function conectarItems(cont, despues) {
     const it = datos.lista.find(x => x.id === el.dataset.id);
     if (!it) return;
     el.querySelector('[data-op="tic"]').onclick = async () => {
+      // en "Falta comprar", marcar abre el precio; desmarcar borra lo que se anotó
+      if (it.tipo === 'Falta' && !it.listo) {
+        if (estado.pago?.id === it.id) estado.pago = null; else abrirPago(it);
+        despues();
+        return;
+      }
+      if (it.tipo === 'Falta' && it.listo && datos.compras.some(c => c.id === it.id)) {
+        await datos.borrarCompra(it.id);
+      }
       await datos.editarItem({ id: it.id, listo: !it.listo });
       despues();
     };
@@ -810,6 +928,7 @@ function conectarItems(cont, despues) {
     };
     el.querySelector('[data-op="quitar"]').onclick = async () => {
       const copia = { ...it };
+      if (estado.pago?.id === it.id) estado.pago = null;
       await datos.borrarItem(it.id);
       despues();
       aviso(`Quitado: ${copia.nombre}`, {
@@ -890,6 +1009,7 @@ function pintarFalta() {
       : '');
 
   conectarItems(cont, pintarFalta);
+  conectarPago(cont, pintarFalta);
   const mostrarTodo = $('#btn-mostrar-secciones');
   if (mostrarTodo) mostrarTodo.onclick = () => { sec.mostrarTodas(); pintarFalta(); };
   const vaciar = $('#btn-vaciar');
